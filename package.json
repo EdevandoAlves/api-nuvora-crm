@@ -1,0 +1,30 @@
+{
+   "name": "nuvoraCrm",
+   "version": "0.0.1",
+   "description": "Awesome project developed with TypeORM.",
+   "type": "commonjs",
+   "devDependencies": {
+      "@types/bcrypt": "^6.0.0",
+      "@types/node": "^22.18.13",
+      "ts-node": "^10.9.2",
+      "typescript": "^5.8.2"
+   },
+   "dependencies": {
+      "@fastify/cors": "^11.1.0",
+      "bcrypt": "^6.0.0",
+      "dotenv": "^17.2.3",
+      "fastify": "^5.6.1",
+      "npx": "^10.2.2",
+      "pg": "^8.14.1",
+      "reflect-metadata": "^0.2.2",
+      "tsx": "^4.20.6",
+      "typeorm": "0.3.27"
+   },
+   "scripts": {
+      "start": "ts-node src/index.ts",
+      "typeorm": "typeorm-ts-node-commonjs",
+      "dev": "tsx watch src/index.ts",
+      "seed": "tsx src/seed.ts",
+      "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts"
+   }
+}
