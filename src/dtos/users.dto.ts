@@ -8,3 +8,8 @@ export interface userCreateDTO {
   cnpj: string;
   avatar?: string
 }
+
+export interface userLoginDTO {
+  email: string;
+  password: string
+}

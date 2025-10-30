@@ -1,5 +1,3 @@
-import { UserRole } from "../entity/User";
-
 export const UserCreateSchema = {
   type: "object",
   required: ["email", "password", "firstName", "lastName", "companyName", "cnpj"],
@@ -22,3 +20,31 @@ export const UserResponseSchema = {
   },
 } as const;
 
+export const LoginUserSchema = {
+  type: "object",
+  required: ["email", "password"],
+  properties: {
+    email: {
+      type: "string",
+      format: "email",
+      description: "User email address"
+    },
+    password: {
+      type: "string",
+      minLength: 1,
+      description: "User password"
+    }
+  },
+  additionalProperties: false,
+} as const;
+
+export const LoginUserResponseSchema = {
+  type: "object",
+  required: ["token"],
+  properties: {
+    token: {
+      type: "string",
+      description: "JWT authentication token"
+    }
+  }
+} as const;

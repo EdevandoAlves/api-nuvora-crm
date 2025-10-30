@@ -1,9 +1,10 @@
 import { AppDataSource } from "../data-source";
-import { userCreateDTO } from "../dtos/users.dto";
+import { userCreateDTO, userLoginDTO } from "../dtos/users.dto";
 import { Organization } from "../entity/Organization";
 import { User, UserRole } from "../entity/User";
 import * as bcrypt from "bcrypt";
 import { generateSlug } from "../helper/generateSlug";
+import * as jwt from "jsonwebtoken";
 
 export class UserService {
   private userRepo = AppDataSource.getRepository(User);
@@ -35,5 +36,38 @@ export class UserService {
 
       return user;
     });
+  }
+
+  async userLogin(data: userLoginDTO) {
+    const { email, password } = data;
+
+    const user = await this.userRepo.findOneBy({ email });
+    if (!user) {
+      throw new Error("credentials not found");
+    }
+
+    if (user.isActive !== true) {
+      throw new Error("credentials not found");
+    }
+
+    const organization = await this.orgRepo.findOneBy({ id: user.organizationId });
+    if (organization.isActive !== true) {
+      throw new Error("credentials not found");
+    }
+
+    const isPassword = await bcrypt.compare(password, user.password);
+    if (!isPassword) {
+      throw new Error("credentials not found");
+    }
+
+    const payload = {
+      id: user.id,
+      organization: user.organizationId,
+      role: user.role
+    }
+
+    const token = jwt.sign({ payload }, process.env.SECRET_KEY, { expiresIn: '1d' });
+
+    return token
   }
 }
