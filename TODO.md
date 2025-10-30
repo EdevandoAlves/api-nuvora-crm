@@ -8,11 +8,11 @@
 ### 🔐 Authentication & Authorization
 
 #### User Registration
-- [ ] **POST /auth/register**
+- [x] **POST /auth/register**
   - **História**: Como um **novo usuário**, quero **me registrar no CRM** para que **eu possa criar minha organização e começar a usar o sistema**.
-  - **Aceita**: `{ name, email, password, companyName, cnpj }`
+  - **Aceita**: `{ email, password, firstName, lastName, companyName, cnpj }`
   - **Cria**: Organization + primeiro User (OWNER)
-  - **Retorna**: JWT token + dados do usuário
+  - **Retorna**: dados do usuário
 
 #### User Login
 - [ ] **POST /auth/login**

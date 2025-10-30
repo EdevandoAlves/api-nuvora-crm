@@ -1,12 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { OrganizationService } from "../services/organizations.service";
-import { OrgRegisterDTO } from "../dtos/organizations.dto";
+import { OrgCreateDTO } from "../dtos/organizations.dto";
 
 
 const organizationService = new OrganizationService();
 
 export class OrganizationController {
-  static async createOrg(req: FastifyRequest<{ Body: OrgRegisterDTO }>, res: FastifyReply) {
+  static async createOrg(req: FastifyRequest<{ Body: OrgCreateDTO }>, res: FastifyReply) {
     try {
       const organization = await organizationService.createOrganization(req.body);
       return res.status(201).send(organization);

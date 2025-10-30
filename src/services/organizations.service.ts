@@ -1,16 +1,12 @@
 import { AppDataSource } from "../data-source";
-import { OrgRegisterDTO } from "../dtos/organizations.dto";
+import { OrgCreateDTO } from "../dtos/organizations.dto";
 import { Organization } from "../entity/Organization";
 
 export class OrganizationService {
   private orgRepo = AppDataSource.getRepository(Organization);
 
-  async createOrganization(data: OrgRegisterDTO) {
+  async createOrganization(data: OrgCreateDTO) {
     const { name, slug, cnpj } = data;
-
-    if (!name || !slug || !cnpj) {
-      throw new Error("Missing required fields");
-    }
 
     if (slug.length < 3) {
       throw new Error("Slug must be at least 3 char");

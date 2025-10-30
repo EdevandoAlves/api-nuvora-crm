@@ -1,7 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { OrganizationController } from "./controllers/organizations.controller";
 import { OrgRegisterSchema, OrgResponseSchema } from "./schemas/organizations.schema";
-import { OrgRegisterDTO } from "./dtos/organizations.dto";
+import { OrgCreateDTO } from "./dtos/organizations.dto";
+import { userCreateDTO } from "./dtos/users.dto";
+import { UserController } from "./controllers/users.controller";
+import { UserCreateSchema, UserResponseSchema } from "./schemas/users.schema";
 
 export async function OrganizationRouters(fastify: FastifyInstance) {
 
@@ -9,7 +12,7 @@ export async function OrganizationRouters(fastify: FastifyInstance) {
     return "World"
   });
 
-  fastify.post<{ Body: OrgRegisterDTO }>("/auth/", {
+  fastify.post<{ Body: OrgCreateDTO }>("/", {
     schema: {
       body: OrgRegisterSchema,
       response: {
@@ -17,4 +20,13 @@ export async function OrganizationRouters(fastify: FastifyInstance) {
       }
     }
   }, OrganizationController.createOrg);
+
+  fastify.post<{ Body: userCreateDTO }>("/auth/register", {
+    schema: {
+      body: UserCreateSchema,
+      response: {
+        201: UserResponseSchema,
+      }
+    }
+  }, UserController.createUser)
 }

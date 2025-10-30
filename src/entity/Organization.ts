@@ -50,6 +50,9 @@ export class Organization {
   @Column({ type: "timestamp", nullable: true })
   subscriptionEndsAt: Date;
 
+  @Column({ type: "uuid", nullable: true })
+  ownerId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
