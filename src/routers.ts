@@ -9,12 +9,12 @@ export async function OrganizationRouters(fastify: FastifyInstance) {
     return "World"
   });
 
-  fastify.post<{ Body: OrgRegisterDTO }>("/auth/register", {
+  fastify.post<{ Body: OrgRegisterDTO }>("/auth/", {
     schema: {
       body: OrgRegisterSchema,
       response: {
         201: OrgResponseSchema,
       }
     }
-  }, OrganizationController.register);
+  }, OrganizationController.createOrg);
 }

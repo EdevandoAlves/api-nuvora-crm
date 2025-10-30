@@ -6,7 +6,7 @@ import { OrgRegisterDTO } from "../dtos/organizations.dto";
 const organizationService = new OrganizationService();
 
 export class OrganizationController {
-  static async register(req: FastifyRequest<{ Body: OrgRegisterDTO }>, res: FastifyReply) {
+  static async createOrg(req: FastifyRequest<{ Body: OrgRegisterDTO }>, res: FastifyReply) {
     try {
       const organization = await organizationService.createOrganization(req.body);
       return res.status(201).send(organization);
