@@ -6,7 +6,7 @@ This document outlines the features to be implemented in the Nuvora CRM.
 ## Core Features
 
 - [ ] **Organization Management:**
-    - [ ] Create Organization
+    - [x] Create Organization
     - [ ] Read Organization Settings
     - [ ] Update Organization Plan
     - [ ] Soft delete an Organization

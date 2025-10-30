@@ -1,10 +1,11 @@
 import { AppDataSource } from "../data-source";
+import { OrgRegisterDTO } from "../dtos/organizations.dto";
 import { Organization } from "../entity/Organization";
 
 export class OrganizationService {
   private orgRepo = AppDataSource.getRepository(Organization);
 
-  async createOrganization(data: { name: string; slug: string; cnpj: string }) {
+  async createOrganization(data: OrgRegisterDTO) {
     const { name, slug, cnpj } = data;
 
     if (!name || !slug || !cnpj) {
