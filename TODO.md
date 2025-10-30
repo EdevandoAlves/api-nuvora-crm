@@ -21,7 +21,7 @@
   - **Valida**: credenciais, usuário ativo, organização ativa
   - **Retorna**: JWT token (com userId, organizationId, role)
 
-#### Refresh Token
+#### Refresh Toke
 - [ ] **POST /auth/refresh**
   - **História**: Como um **usuário logado**, quero **renovar meu token automaticamente** para que **eu não precise fazer login toda hora**.
   - **Aceita**: `{ refreshToken }`
