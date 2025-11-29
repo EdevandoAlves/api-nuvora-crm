@@ -15,7 +15,7 @@
   - **Retorna**: dados do usuário
 
 #### User Login
-- [ ] **POST /auth/login**
+- [x] **POST /auth/login**
   - **História**: Como um **usuário registrado**, quero **fazer login** para que **eu possa acessar minha conta e dados**.
   - **Aceita**: `{ email, password }`
   - **Valida**: credenciais, usuário ativo, organização ativa

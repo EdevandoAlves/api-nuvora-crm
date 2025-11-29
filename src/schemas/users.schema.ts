@@ -7,7 +7,7 @@ export const UserCreateSchema = {
     firstName: { type: "string" },
     lastName: { type: "string" },
     companyName: { type: "string" },
-    cnpj: { type: "string" },
+    cnpj: { type: "string", minLength: 14, maxLength: 14 },
   },
 } as const;
 
@@ -47,4 +47,17 @@ export const LoginUserResponseSchema = {
       description: "JWT authentication token"
     }
   }
+} as const;
+
+export const ForgotPasswordSchema = {
+  type: "object",
+  required: ["email"],
+  properties: {
+    email: {
+      type: "string",
+      format: "email",
+      description: "User email address for password recovery"
+    }
+  },
+  additionalProperties: false,
 } as const;

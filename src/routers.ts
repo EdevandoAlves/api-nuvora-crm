@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { OrganizationController } from "./controllers/organizations.controller";
 import { OrgRegisterSchema, OrgResponseSchema } from "./schemas/organizations.schema";
 import { OrgCreateDTO } from "./dtos/organizations.dto";
-import { userCreateDTO, userLoginDTO } from "./dtos/users.dto";
+import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO } from "./dtos/users.dto";
 import { UserController } from "./controllers/users.controller";
 import { LoginUserResponseSchema, LoginUserSchema, UserCreateSchema, UserResponseSchema } from "./schemas/users.schema";
 
@@ -38,4 +38,8 @@ export async function Routers(fastify: FastifyInstance) {
       }
     }
   }, UserController.userLogin)
+
+  fastify.post<{ Body: forgotPasswordDTO }>("/auth/forgot-password", UserController.forgotPassword)
+
+  fastify.post<{ Params: resetPasswordParamsDTO, Body: resetPasswordBodyDTO }>("/auth/reset-password/:token", UserController.resetPassword)
 }

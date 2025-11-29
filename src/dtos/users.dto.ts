@@ -1,3 +1,4 @@
+import { createPublicKey } from "crypto";
 
 export interface userCreateDTO {
   email: string;
@@ -9,7 +10,12 @@ export interface userCreateDTO {
   avatar?: string
 }
 
-export interface userLoginDTO {
-  email: string;
-  password: string
+export interface userLoginDTO extends Pick<userCreateDTO, "email" | "password"> { }
+
+export interface forgotPasswordDTO extends Pick<userCreateDTO, "email"> { }
+
+export interface resetPasswordBodyDTO extends Pick<userCreateDTO, "password"> { }
+
+export interface resetPasswordParamsDTO {
+  token: string;
 }

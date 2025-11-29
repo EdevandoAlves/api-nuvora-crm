@@ -40,13 +40,19 @@ export class User {
   email: string;
 
   @Column({ type: "varchar", length: 255 })
-  password: string; // Hashed
+  password: string;
 
   @Column({ type: "varchar", length: 100 })
   firstName: string;
 
   @Column({ type: "varchar", length: 100 })
   lastName: string;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  resetToken!: string | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  expiresAt!: Date | null;
 
   @Column({
     type: "enum",
