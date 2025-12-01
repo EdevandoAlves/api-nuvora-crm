@@ -7,6 +7,7 @@ import { generateSlug } from "../helper/generateSlug";
 import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as nodemailer from "nodemailer";
+import { tokenDTO } from "../dtos/organizations.dto";
 
 export class UserService {
   private userRepo = AppDataSource.getRepository(User);
@@ -145,5 +146,22 @@ export class UserService {
     await this.userRepo.save(user);
 
     return;
+  }
+
+  async meSettings(data: tokenDTO): Promise<Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">> {
+    const { id } = data;
+
+    const user = await this.userRepo.findOneBy({ id });
+    if (!user || user.isActive === false) {
+      throw { status: 401, message: "user not found" }
+    }
+
+    return {
+      id: user.id,
+      organizationId: user.organizationId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    } satisfies Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">
   }
 }

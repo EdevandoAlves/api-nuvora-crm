@@ -8,7 +8,6 @@ export function roleMiddleware(allowedRole: UserRole[]) {
     }
 
     const userRole = req.user.role as UserRole;
-    console.log(userRole)
     if (allowedRole.includes(userRole)) {
       done();
     } else {

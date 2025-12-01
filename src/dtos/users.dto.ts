@@ -19,3 +19,4 @@ export interface resetPasswordBodyDTO extends Pick<userCreateDTO, "password"> { 
 export interface resetPasswordParamsDTO {
   token: string;
 }
+

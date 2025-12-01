@@ -1,13 +1,11 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { OrganizationController } from "./controllers/organizations.controller";
 import { OrgRegisterSchema, OrgResponseSchema } from "./schemas/organizations.schema";
-import { OrgCreateDTO } from "./dtos/organizations.dto";
+import { tokenDTO } from "./dtos/organizations.dto";
 import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO } from "./dtos/users.dto";
 import { UserController } from "./controllers/users.controller";
 import { LoginUserResponseSchema, LoginUserSchema, UserCreateSchema, UserResponseSchema } from "./schemas/users.schema";
 import { authMiddleware } from "./middlewares/auth.middleware";
-import { roleMiddleware } from "./middlewares/role.middleware";
-import { UserRole } from "./entity/User";
 
 export async function Routers(fastify: FastifyInstance) {
 
@@ -37,7 +35,7 @@ export async function Routers(fastify: FastifyInstance) {
 
   fastify.post<{ Params: resetPasswordParamsDTO, Body: resetPasswordBodyDTO }>("/auth/reset-password/:token", UserController.resetPassword)
 
-  fastify.post<{ Body: OrgCreateDTO }>("/", {
+  fastify.post<{ Body: tokenDTO }>("/", {
     schema: {
       body: OrgRegisterSchema,
       response: {
@@ -46,9 +44,16 @@ export async function Routers(fastify: FastifyInstance) {
     }
   }, OrganizationController.createOrg);
 
+  fastify.get("/me/settings",
+    {
+      preHandler: [authMiddleware]
+    }
+    , UserController.meSettings);
+
   fastify.get("/organization/settings",
     {
-      preHandler: [authMiddleware, roleMiddleware([UserRole.OWNER])]
+      preHandler: [authMiddleware]
     }
     , OrganizationController.orgSettings);
+
 }

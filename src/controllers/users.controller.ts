@@ -44,4 +44,14 @@ export class UserController {
       return res.status(status).send({ error: err.message });
     }
   }
+
+  static async meSettings(req: FastifyRequest, res: FastifyReply) {
+    try {
+      const user = await userService.meSettings(req.user);
+      return res.status(200).send({ user });
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
 }
