@@ -31,4 +31,8 @@ export class OrganizationService {
 
     return organization;
   }
+
+  async orgSettings() {
+
+  }
 }

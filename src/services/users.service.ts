@@ -62,15 +62,20 @@ export class UserService {
       throw { status: 401, message: "Invalid credentials" };
     }
 
-    const payload = {
-      id: user.id,
-      organization: user.organizationId,
-      role: user.role
+    interface jwtPayload {
+      id: string;
+      organization: string;
+      role: string
     }
 
-    const token = jwt.sign({ payload }, process.env.SECRET_KEY, { expiresIn: '1d' });
+    const payload: jwtPayload = { id: user.id, organization: user.organizationId, role: user.role };
 
-    return token
+    if (!process.env.SECRET_KEY) {
+      throw new Error("SECRET_KEY missing");
+    }
+
+    const token = jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: "1d" });
+    return token;
   }
 
   async forgotPassword(data: forgotPasswordDTO) {

@@ -11,7 +11,18 @@ export class OrganizationController {
       const organization = await organizationService.createOrganization(req.body);
       return res.status(201).send(organization);
     } catch (err) {
-      return res.status(400).send({ error: err.message });
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async orgSettings(req: FastifyRequest, res: FastifyReply) {
+    try {
+      const organization = await organizationService.orgSettings();
+      return res.status(201).send(organization)
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
     }
   }
 } 
