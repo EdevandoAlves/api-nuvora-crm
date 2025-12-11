@@ -113,7 +113,7 @@ export class UserService {
       <h1> Recuperação de Senha </h1>
       <p> Você solicitou a recuperação de senha.</p>
       <p> Clique no link abaixo para redefinir sua senha: </p>
-      <a href = "${resetLink}" > Redefinir Senha </a>
+      <a href="${resetLink}"> Redefinir Senha </a>
       <p> Este link expira em 1 hora.</p>
       <p> Se você não solicitou isso, ignore este email.</p>
       `,
