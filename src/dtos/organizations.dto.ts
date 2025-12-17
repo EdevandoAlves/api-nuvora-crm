@@ -9,5 +9,6 @@ export interface OrgCreateDTO {
 export interface tokenDTO {
   id: string;
   organization: string;
+  role: string
 }
 

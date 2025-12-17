@@ -1,3 +1,5 @@
+import { format } from "path";
+
 export const OrgRegisterSchema = {
   type: "object",
   required: ["name", "slug", "cnpj"],
@@ -24,3 +26,13 @@ export const OrgResponseSchema = {
   },
 } as const;
 
+
+export const OrgSettingsResponseSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string", format: "uuid" },
+    name: { type: "string" },
+    cnpj: { type: "string" },
+    plan: { type: "string", enum: ["FREE", "BASIC", "PRO", "ENTERPRISE"] },
+  },
+} as const;

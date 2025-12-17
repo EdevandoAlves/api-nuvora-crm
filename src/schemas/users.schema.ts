@@ -61,3 +61,33 @@ export const ForgotPasswordSchema = {
   },
   additionalProperties: false,
 } as const;
+
+export const UserSettingsResponseSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string", format: "uuid" },
+    organizationId: { type: "string" },
+    email: { type: "string" },
+    firstName: { type: "string" },
+    lastName: { type: "string" },
+  },
+} as const;
+
+export const UserUpdateSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    firstName: { type: 'string', minLength: 2, maxLength: 50 },
+    lastName: { type: 'string', minLength: 2, maxLength: 50 }
+  },
+  minProperties: 1
+}
+
+export const UserUpdateResponseSchema = {
+  type: "object",
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' }
+  },
+}
+

@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/users.service";
-import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO } from "../dtos/users.dto";
 
 const userService = new UserService();
 
@@ -49,6 +49,16 @@ export class UserController {
     try {
       const user = await userService.meSettings(req.user);
       return res.status(200).send({ user });
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async meUpdate(req: FastifyRequest<{ Body: UserUpdateDTO }>, res: FastifyReply) {
+    try {
+      const userUpdated = await userService.meUpdate(req.body, req.user);
+      return res.status(200).send({ userUpdated });
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

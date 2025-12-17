@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO, UserUpdateDTO } from "../dtos/users.dto";
 import { Organization } from "../entity/Organization";
 import { User, UserRole } from "../entity/User";
 import * as bcrypt from "bcrypt";
@@ -8,6 +8,7 @@ import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as nodemailer from "nodemailer";
 import { tokenDTO } from "../dtos/organizations.dto";
+import { start } from "repl";
 
 export class UserService {
   private userRepo = AppDataSource.getRepository(User);
@@ -77,6 +78,64 @@ export class UserService {
 
     const token = jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: "1d" });
     return token;
+  }
+
+  async meUpdate(data: UserUpdateDTO, user: tokenDTO) {
+    const { firstName, lastName } = data;
+    const { id, organization } = user
+
+    const userExists = await this.userRepo.findOne({
+      where: {
+        id,
+        organizationId: organization,
+        isActive: true
+      }
+    });
+
+    if (!userExists) {
+      throw { status: 403, message: "Invalid user" }
+    }
+
+    if (firstName === undefined && lastName === undefined) {
+      throw { status: 400, message: "No data to update" };
+    }
+
+    if (firstName !== undefined) {
+      if (firstName.trim().length < 2) {
+        throw { status: 400, message: "first name too short" }
+      }
+
+      if (firstName.trim().length > 30) {
+        throw { status: 400, message: "first name too long" };
+      }
+    }
+
+
+    if (lastName !== undefined) {
+      if (lastName.trim().length < 2) {
+        throw { status: 400, message: "last name too short" }
+      }
+
+      if (lastName.trim().length > 30) {
+        throw { status: 400, message: "last name too long" };
+      }
+    }
+
+    const updateData: Partial<User> = {}
+
+    if (firstName !== undefined) {
+      updateData.firstName = firstName.trim();
+    }
+
+
+    if (lastName !== undefined) {
+      updateData.lastName = lastName.trim();
+    }
+
+    await this.userRepo.update({ id, organizationId: organization }, updateData);
+
+    return updateData;
+
   }
 
   async forgotPassword(data: forgotPasswordDTO) {
