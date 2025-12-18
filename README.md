@@ -1,16 +1,24 @@
 # NuvoraCRM
 
+> Backend de CRM SaaS multi-tenant, focado em isolamento de dados, controle de acesso e arquitetura limpa.
+> Projeto autoral, desenvolvido para simular desafios reais de um produto B2B.
+
+## 🚧 Em desenvolvimento ativo  
+O foco atual é:
+- consolidação do RBAC
+- isolamento por organização
+- fluxos de usuário (Rotas e regras de negocio dos usuarios)
+
 NuvoraCRM é um backend de CRM poderoso, escalável e fácil de usar, projetado para gerenciar organizações, usuários, clientes, negócios e muito mais. Construído com uma pilha de tecnologia moderna, ele fornece uma base robusta para a construção de uma aplicação de CRM completa.
 
-## ✨ Recursos
+## ✨ Recursos Técnicos
 
-- **Multi-tenancy:** Os dados de cada organização são completamente isolados.
-- **Controle de Acesso Baseado em Função (RBAC):** Permissões granulares para diferentes funções de usuário (Proprietário, Administrador, Gerente, Vendas).
-- **Gerenciamento de Clientes:** Acompanhe leads, prospects e clientes ativos.
-- **Pipeline de Negócios:** Gerencie oportunidades de vendas desde a qualificação até o fechamento.
-- **Gerenciamento de Tarefas:** Crie e atribua tarefas aos membros da equipe.
-- **Registro de Interações:** Mantenha um histórico completo de todas as comunicações com os clientes.
-- **Catálogo de Produtos:** Gerencie seus produtos e serviços.
+- Multi-tenancy com isolamento por organização em todas as queries
+- RBAC com validação de actor vs target em operações sensíveis
+- Fluxo de convite de usuários com token de ativação
+- Autenticação JWT stateless
+- Separação clara entre Controller / Service / Repository
+- DTOs semânticos por caso de uso
 
 ## 🛠️ Stack de Tecnologia
 
