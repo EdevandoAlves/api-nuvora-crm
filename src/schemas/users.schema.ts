@@ -84,6 +84,7 @@ export const UserUpdateSchema = {
 }
 
 export const UserUpdateResponseSchema = {
+
   type: "object",
   properties: {
     firstName: { type: 'string' },

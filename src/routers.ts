@@ -6,12 +6,16 @@ import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCr
 import { UserController } from "./controllers/users.controller";
 import { LoginUserResponseSchema, LoginUserSchema, UserCreateSchema, UserResponseSchema, UserSettingsResponseSchema, UserUpdateResponseSchema, UserUpdateSchema } from "./schemas/users.schema";
 import { authMiddleware } from "./middlewares/auth.middleware";
+import { roleMiddleware } from "./middlewares/role.middleware";
+import { UserRole } from "./entity/User";
 
 export async function Routers(fastify: FastifyInstance) {
 
   fastify.get("/hello", async (req: FastifyRequest, res: FastifyReply) => {
     return "World"
   });
+
+  // AUTH
 
   fastify.post<{ Body: userCreateDTO }>("/auth/register", {
     schema: {
@@ -35,14 +39,8 @@ export async function Routers(fastify: FastifyInstance) {
 
   fastify.post<{ Params: resetPasswordParamsDTO, Body: resetPasswordBodyDTO }>("/auth/reset-password/:token", UserController.resetPassword)
 
-  fastify.post<{ Body: tokenDTO }>("/", {
-    schema: {
-      body: OrgRegisterSchema,
-      response: {
-        201: OrgResponseSchema,
-      }
-    }
-  }, OrganizationController.createOrg);
+  // AUTH
+  // USER
 
   fastify.get("/me/settings",
     {
@@ -52,9 +50,9 @@ export async function Routers(fastify: FastifyInstance) {
         }
       }
     }
-    , UserController.meSettings);
+    , UserController.getUserProfile);
 
-  fastify.put("/me/settings",
+  fastify.patch("/me/settings",
     {
       preHandler: [authMiddleware], schema: {
         body: UserUpdateSchema,
@@ -63,8 +61,30 @@ export async function Routers(fastify: FastifyInstance) {
         }
       }
     },
-    UserController.meUpdate);
+    UserController.updateCurrentUser);
 
+
+  fastify.patch("/users/:id",
+    {
+      preHandler: [authMiddleware], schema: {
+        body: UserUpdateSchema,
+        response: {
+          201: UserUpdateResponseSchema,
+        }
+      }
+    },
+    UserController.updateUserById);
+
+  fastify.post("/users/invite",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])]
+    },
+    UserController.inviteUser);
+
+  fastify.post("/auth/accept-invitation/:token", UserController.acceptInvitation)
+
+  // USER
+  // ORG
   fastify.get("/organization/settings",
     {
       preHandler: [authMiddleware], schema: {
@@ -75,4 +95,15 @@ export async function Routers(fastify: FastifyInstance) {
     }
     , OrganizationController.orgSettings);
 
+  fastify.post<{ Body: tokenDTO }>("/", {
+    schema: {
+      body: OrgRegisterSchema,
+      response: {
+        201: OrgResponseSchema,
+      }
+    }
+  }, OrganizationController.createOrg);
+
+  // ORG
 }
+

@@ -28,13 +28,13 @@
   - **Retorna**: Novo accessToken
 
 #### Forgot Password
-- [ ] **POST /auth/forgot-password**
+- [x] **POST /auth/forgot-password**
   - **História**: Como um **usuário que esqueceu a senha**, quero **receber um email de recuperação** para que **eu possa criar uma nova senha**.
   - **Aceita**: `{ email }`
   - **Envia**: Email com token de reset (válido por 1h)
 
 #### Reset Password
-- [ ] **POST /auth/reset-password**
+- [x] **POST /auth/reset-password**
   - **História**: Como um **usuário que esqueceu a senha**, quero **usar o token recebido por email** para que **eu possa definir uma nova senha**.
   - **Aceita**: `{ token, newPassword }`
   - **Valida**: Token não expirado
@@ -50,7 +50,7 @@
 ### 👥 User Management
 
 #### Invite User
-- [ ] **POST /users/invite**
+- [x] **POST /users/invite**
   - **História**: Como um **OWNER ou ADMIN**, quero **convidar novos usuários para minha organização** para que **minha equipe possa usar o CRM**.
   - **Requer**: Role OWNER ou ADMIN
   - **Aceita**: `{ email, firstName, lastName, role }`
@@ -79,7 +79,7 @@
   - **Retorna**: Dados completos + estatísticas (customers, deals, tasks)
 
 #### Update User Profile
-- [ ] **PUT /users/:id**
+- [x] **PUT /users/:id**
   - **História**: Como um **usuário**, quero **atualizar meu perfil** para que **minhas informações estejam sempre corretas**.
   - **Permissão**: Próprio usuário OU ADMIN/OWNER
   - **Aceita**: `{ firstName, lastName, avatar, phone }`

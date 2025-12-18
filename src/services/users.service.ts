@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { forgotPasswordDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO, UserUpdateDTO } from "../dtos/users.dto";
+import { AcceptInvitationBodyDTO, AcceptInvitationParamsDTO, forgotPasswordDTO, InviteUserDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO, UserUpdateDTO } from "../dtos/users.dto";
 import { Organization } from "../entity/Organization";
 import { User, UserRole } from "../entity/User";
 import * as bcrypt from "bcrypt";
@@ -8,7 +8,8 @@ import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as nodemailer from "nodemailer";
 import { tokenDTO } from "../dtos/organizations.dto";
-import { start } from "repl";
+import { validateUpdateName } from "../helper/validateUpdateName";
+import { devNull } from "os";
 
 export class UserService {
   private userRepo = AppDataSource.getRepository(User);
@@ -80,63 +81,6 @@ export class UserService {
     return token;
   }
 
-  async meUpdate(data: UserUpdateDTO, user: tokenDTO) {
-    const { firstName, lastName } = data;
-    const { id, organization } = user
-
-    const userExists = await this.userRepo.findOne({
-      where: {
-        id,
-        organizationId: organization,
-        isActive: true
-      }
-    });
-
-    if (!userExists) {
-      throw { status: 403, message: "Invalid user" }
-    }
-
-    if (firstName === undefined && lastName === undefined) {
-      throw { status: 400, message: "No data to update" };
-    }
-
-    if (firstName !== undefined) {
-      if (firstName.trim().length < 2) {
-        throw { status: 400, message: "first name too short" }
-      }
-
-      if (firstName.trim().length > 30) {
-        throw { status: 400, message: "first name too long" };
-      }
-    }
-
-
-    if (lastName !== undefined) {
-      if (lastName.trim().length < 2) {
-        throw { status: 400, message: "last name too short" }
-      }
-
-      if (lastName.trim().length > 30) {
-        throw { status: 400, message: "last name too long" };
-      }
-    }
-
-    const updateData: Partial<User> = {}
-
-    if (firstName !== undefined) {
-      updateData.firstName = firstName.trim();
-    }
-
-
-    if (lastName !== undefined) {
-      updateData.lastName = lastName.trim();
-    }
-
-    await this.userRepo.update({ id, organizationId: organization }, updateData);
-
-    return updateData;
-
-  }
 
   async forgotPassword(data: forgotPasswordDTO) {
     const { email } = data;
@@ -207,7 +151,7 @@ export class UserService {
     return;
   }
 
-  async meSettings(data: tokenDTO): Promise<Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">> {
+  async getUserProfile(data: tokenDTO): Promise<Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">> {
     const { id } = data;
 
     const user = await this.userRepo.findOneBy({ id });
@@ -222,5 +166,141 @@ export class UserService {
       firstName: user.firstName,
       lastName: user.lastName,
     } satisfies Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">
+  }
+
+  async updateUser(user: tokenDTO, targetUserId: string, data: UserUpdateDTO) {
+    const { firstName, lastName } = data;
+    const { id, organization, role } = user
+
+    const isSelf = id === targetUserId;
+    const isAdmin = role === "ADMIN";
+
+    if (!isSelf && !isAdmin) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const userExists = await this.userRepo.findOne({
+      where: {
+        id: targetUserId,
+        organizationId: organization,
+        isActive: true
+      }
+    });
+
+    if (!userExists) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    if (firstName === undefined && lastName === undefined) {
+      throw { status: 400, message: "No data to update" };
+    }
+
+    const updateData: Partial<User> = {}
+
+    if (firstName !== undefined) {
+      updateData.firstName = validateUpdateName(firstName, "firstName");
+    }
+
+    if (lastName !== undefined) {
+      updateData.lastName = validateUpdateName(lastName, "lastName");
+    }
+
+    await this.userRepo.update({ id, organizationId: organization }, updateData);
+
+    return updateData;
+  }
+
+  async inviteUser(user: tokenDTO, data: InviteUserDTO) {
+    const { organization, role: uRole } = user;
+    const { email, firstName, lastName, role } = data;
+
+    if (uRole !== "OWNER" && uRole !== "ADMIN") {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const existing = await this.userRepo.findOne({
+      where: {
+        email: email,
+        organizationId: organization
+      }
+    });
+
+    if (existing) {
+      throw { status: 400, message: "User already exists" }
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+
+    const temporaryPassword = await bcrypt.hash(crypto.randomBytes(8).toString('hex'), 10);
+
+    const userInvite = this.userRepo.create({
+      email,
+      firstName,
+      lastName,
+      role,
+      organizationId: organization,
+      isActive: false,
+      password: temporaryPassword,
+      resetToken: token,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 168),
+    });
+
+    await this.userRepo.save(userInvite);
+
+    const activeLink = `http://localhost:8000/accept-invitation?token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    try {
+      await transporter.sendMail({
+        from: `"CRM" < ${process.env.SMTP_USER}> `,
+        to: email,
+        subject: "Convite para participar do CRM",
+        html: `
+      <h1> Convite para fazer parte do CRM </h1>
+      <p> foi convidado para participar da empresa X no CRM</p>
+      <p> Clique no link abaixo para definir sua senha: </p>
+      <a href="${activeLink}"> Definir Senha </a>
+      <p> Este link expira em 7 dias.</p>
+      <p> Se você não solicitou isso, ignore este email.</p>
+      `,
+      });
+
+      return;
+    } catch (err) {
+      throw { error: 500, message: "Error sending code. Please try again later." }
+    }
+  }
+
+  async acceptInvitation(paramsData: AcceptInvitationParamsDTO, bodyData: AcceptInvitationBodyDTO) {
+    const { token } = paramsData;
+    const { password } = bodyData;
+
+    const user = await this.userRepo.findOne({ where: { resetToken: token } });
+    if (!user || !user.expiresAt || user.expiresAt < new Date()) {
+      throw { status: 400, message: "Token is invalid or has expired." };
+    }
+
+    if (user.isActive === true) {
+      throw { status: 400, message: "User already active" };
+    }
+
+    const newPassword = await bcrypt.hash(password, 10);
+    user.password = newPassword;
+    user.expiresAt = null;
+    user.resetToken = null;
+    user.isActive = true;
+
+    await this.userRepo.save(user);
+
+    return;
   }
 }

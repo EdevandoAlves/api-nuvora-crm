@@ -1,3 +1,5 @@
+import { UserRole } from "../entity/User";
+
 export interface userBase {
   email?: string;
   password?: string;
@@ -27,3 +29,16 @@ export type UserUpdateDTO = Partial<
   Pick<userBase, "firstName" | "lastName">
 >;
 
+export interface UserUpdateParamsDTO {
+  id: string;
+}
+
+export interface InviteUserDTO extends Pick<userCreateDTO, "email" | "firstName" | "lastName"> {
+  role: UserRole
+}
+
+export interface AcceptInvitationParamsDTO {
+  token: string;
+}
+
+export interface AcceptInvitationBodyDTO extends Pick<userCreateDTO, "password"> { }

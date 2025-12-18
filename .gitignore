@@ -6,3 +6,5 @@ build/
 tmp/
 temp/
 .env
+explicacao.md
+TODO.md
