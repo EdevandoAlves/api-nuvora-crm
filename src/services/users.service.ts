@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { AcceptInvitationBodyDTO, AcceptInvitationParamsDTO, forgotPasswordDTO, InviteUserDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO, UserUpdateDTO } from "../dtos/users.dto";
+import { AcceptInvitationBodyDTO, AcceptInvitationParamsDTO, forgotPasswordDTO, InviteUserDTO, ListUsersQueryDTO, resetPasswordBodyDTO, resetPasswordParamsDTO, userCreateDTO, userLoginDTO, UserUpdateDTO } from "../dtos/users.dto";
 import { Organization } from "../entity/Organization";
 import { User, UserRole } from "../entity/User";
 import * as bcrypt from "bcrypt";
@@ -168,21 +168,27 @@ export class UserService {
     } satisfies Pick<User, "id" | "organizationId" | "email" | "firstName" | "lastName">
   }
 
-  async updateUser(user: tokenDTO, targetUserId: string, data: UserUpdateDTO) {
-    const { firstName, lastName } = data;
-    const { id, organization, role } = user
+  async updateUser({
+    actor,
+    target,
+    dataBody
+  }: {
+    actor: tokenDTO,
+    target: string,
+    dataBody: UserUpdateDTO;
+  }) {
+    const { firstName, lastName } = dataBody;
+    console.log(target)
+    const isSelf = actor.id === target;
 
-    const isSelf = id === targetUserId;
-    const isAdmin = role === "ADMIN";
-
-    if (!isSelf && !isAdmin) {
+    if (!isSelf && !["OWNER", "ADMIN"].includes(actor.role)) {
       throw { status: 403, message: "Forbidden" }
     }
 
     const userExists = await this.userRepo.findOne({
       where: {
-        id: targetUserId,
-        organizationId: organization,
+        id: target,
+        organizationId: actor.organization,
         isActive: true
       }
     });
@@ -205,23 +211,28 @@ export class UserService {
       updateData.lastName = validateUpdateName(lastName, "lastName");
     }
 
-    await this.userRepo.update({ id, organizationId: organization }, updateData);
+    await this.userRepo.update({ id: actor.id, organizationId: actor.organization }, updateData);
 
     return updateData;
   }
 
-  async inviteUser(user: tokenDTO, data: InviteUserDTO) {
-    const { organization, role: uRole } = user;
-    const { email, firstName, lastName, role } = data;
+  async inviteUser({
+    actor,
+    dataBody
+  }: {
+    actor: tokenDTO,
+    dataBody: InviteUserDTO
+  }) {
+    const { email, firstName, lastName, role } = dataBody;
 
-    if (uRole !== "OWNER" && uRole !== "ADMIN") {
+    if (!["OWNER", "ADMIN"].includes(actor.role)) {
       throw { status: 403, message: "Forbidden" }
     }
 
     const existing = await this.userRepo.findOne({
       where: {
         email: email,
-        organizationId: organization
+        organizationId: actor.organization
       }
     });
 
@@ -238,7 +249,7 @@ export class UserService {
       firstName,
       lastName,
       role,
-      organizationId: organization,
+      organizationId: actor.organization,
       isActive: false,
       password: temporaryPassword,
       resetToken: token,
@@ -280,9 +291,13 @@ export class UserService {
     }
   }
 
-  async acceptInvitation(paramsData: AcceptInvitationParamsDTO, bodyData: AcceptInvitationBodyDTO) {
-    const { token } = paramsData;
-    const { password } = bodyData;
+  async acceptInvitation({
+    token,
+    password
+  }: {
+    token: string
+    password: string
+  }) {
 
     const user = await this.userRepo.findOne({ where: { resetToken: token } });
     if (!user || !user.expiresAt || user.expiresAt < new Date()) {
@@ -302,5 +317,65 @@ export class UserService {
     await this.userRepo.save(user);
 
     return;
+  }
+
+  async listUsers({
+    actor,
+    queryFilters,
+    pagination
+  }: {
+    actor: tokenDTO
+    queryFilters?: { role?: UserRole; isActive?: boolean }
+    pagination?: { page?: number; limit?: number }
+  }) {
+    if (!['OWNER', 'ADMIN', 'MANAGER'].includes(actor.role)) {
+      throw { status: 403, message: 'Forbidden' }
+    }
+
+    const page =
+      pagination?.page && pagination.page > 0 ? pagination.page : 1
+    const limit =
+      pagination?.limit && pagination.limit > 0 && pagination.limit <= 100
+        ? pagination.limit
+        : 20
+    const skip = (page - 1) * limit
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .where('user.organizationId = :orgId', {
+        orgId: actor.organization
+      })
+
+    if (queryFilters?.role) {
+      qb.andWhere('user.role = :role', { role: queryFilters.role })
+    }
+
+    if (queryFilters?.isActive !== undefined) {
+      qb.andWhere('user.isActive = :isActive', {
+        isActive: queryFilters.isActive
+      })
+    }
+
+    const total = await qb.getCount()
+
+    qb
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .loadRelationCountAndMap(
+        'user.customerCount',
+        'user.customers'
+      )
+      .loadRelationCountAndMap(
+        'user.dealCount',
+        'user.deals'
+      )
+
+    const users = await qb.getMany()
+
+    return {
+      users,
+      total
+    }
   }
 }

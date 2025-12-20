@@ -42,3 +42,10 @@ export interface AcceptInvitationParamsDTO {
 }
 
 export interface AcceptInvitationBodyDTO extends Pick<userCreateDTO, "password"> { }
+
+export interface ListUsersQueryDTO {
+  role?: UserRole,
+  isActive?: boolean,
+  page: number,
+  limit: number
+}

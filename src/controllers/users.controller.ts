@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/users.service";
-import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO } from "../dtos/users.dto";
 
 const userService = new UserService();
 
@@ -57,7 +57,10 @@ export class UserController {
 
   static async updateCurrentUser(req: FastifyRequest<{ Body: UserUpdateDTO }>, res: FastifyReply) {
     try {
-      const userUpdated = await userService.updateUser(req.user, req.user.id, req.body);
+      const actor = req.user;
+      const dataBody = req.body;
+
+      const userUpdated = await userService.updateUser({ actor, target: actor.id, dataBody });
       return res.status(200).send({ userUpdated });
     } catch (err) {
       const status = err.status || 400;
@@ -67,7 +70,11 @@ export class UserController {
 
   static async updateUserById(req: FastifyRequest<{ Params: UserUpdateParamsDTO, Body: UserUpdateDTO }>, res: FastifyReply) {
     try {
-      const userUpdated = await userService.updateUser(req.user, req.params.id, req.body);
+      const actor = req.user;
+      const target = req.params.id;
+      const dataBody = req.body;
+
+      const userUpdated = await userService.updateUser({ actor, target, dataBody });
       return res.status(200).send({ userUpdated });
     } catch (err) {
       const status = err.status || 400;
@@ -77,7 +84,10 @@ export class UserController {
 
   static async inviteUser(req: FastifyRequest<{ Body: InviteUserDTO }>, res: FastifyReply) {
     try {
-      await userService.inviteUser(req.user, req.body);
+      const actor = req.user;
+      const dataBody = req.body;
+
+      await userService.inviteUser({ actor, dataBody });
       return res.status(200).send({ message: "If the email exists, a link will be sent." })
     } catch (err) {
       const status = err.status || 400;
@@ -87,8 +97,45 @@ export class UserController {
 
   static async acceptInvitation(req: FastifyRequest<{ Params: AcceptInvitationParamsDTO, Body: AcceptInvitationBodyDTO }>, res: FastifyReply) {
     try {
-      await userService.acceptInvitation(req.params, req.body);
+      const { token } = req.params
+      const { password } = req.body
+
+      await userService.acceptInvitation({ token, password });
       return res.status(200).send({ message: "Password defined successfully" })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async getListUsers(req: FastifyRequest<{ Querystring: ListUsersQueryDTO }>, res: FastifyReply) {
+    try {
+      const { role, isActive, page = 1, limit = 20 } = req.query
+      const actor = req.user
+      const result = await userService.listUsers({ actor, queryFilters: { role, isActive }, pagination: { page, limit } });
+      const totalPages = Math.ceil(result.total / limit);
+
+      const safeUsers = result.users.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isActive: user.isActive,
+        customerCount: (user as any).customerCount,
+        dealCount: (user as any).dealCount,
+        createdAt: user.createdAt
+      }))
+
+      return res.status(200).send({
+        users: safeUsers,
+        pagination: {
+          total: result.total,
+          page,
+          limit,
+          totalPages
+        }
+      })
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

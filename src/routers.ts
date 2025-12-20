@@ -7,7 +7,7 @@ import { UserController } from "./controllers/users.controller";
 import { LoginUserResponseSchema, LoginUserSchema, UserCreateSchema, UserResponseSchema, UserSettingsResponseSchema, UserUpdateResponseSchema, UserUpdateSchema } from "./schemas/users.schema";
 import { authMiddleware } from "./middlewares/auth.middleware";
 import { roleMiddleware } from "./middlewares/role.middleware";
-import { UserRole } from "./entity/User";
+import { User, UserRole } from "./entity/User";
 
 export async function Routers(fastify: FastifyInstance) {
 
@@ -66,7 +66,7 @@ export async function Routers(fastify: FastifyInstance) {
 
   fastify.patch("/users/:id",
     {
-      preHandler: [authMiddleware], schema: {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])], schema: {
         body: UserUpdateSchema,
         response: {
           201: UserUpdateResponseSchema,
@@ -81,7 +81,13 @@ export async function Routers(fastify: FastifyInstance) {
     },
     UserController.inviteUser);
 
-  fastify.post("/auth/accept-invitation/:token", UserController.acceptInvitation)
+  fastify.post("/auth/accept-invitation/:token", UserController.acceptInvitation);
+
+  fastify.get("/users",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , UserController.getListUsers);
 
   // USER
   // ORG
