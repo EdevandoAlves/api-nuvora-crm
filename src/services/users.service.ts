@@ -9,7 +9,6 @@ import * as crypto from "crypto";
 import * as nodemailer from "nodemailer";
 import { tokenDTO } from "../dtos/organizations.dto";
 import { validateUpdateName } from "../helper/validateUpdateName";
-import { devNull } from "os";
 
 export class UserService {
   private userRepo = AppDataSource.getRepository(User);
@@ -178,7 +177,6 @@ export class UserService {
     dataBody: UserUpdateDTO;
   }) {
     const { firstName, lastName } = dataBody;
-    console.log(target)
     const isSelf = actor.id === target;
 
     if (!isSelf && !["OWNER", "ADMIN"].includes(actor.role)) {
@@ -378,4 +376,63 @@ export class UserService {
       total
     }
   }
+
+  async getUsersById({
+    actor,
+    target
+  }: {
+    actor: tokenDTO,
+    target: string
+  }) {
+    const isSelf = actor.id === target;
+
+    if (!isSelf && !["OWNER", "ADMIN"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .where('user.id = :targetId', { targetId: target })
+      .andWhere('user.organizationId = :orgId', {
+        orgId: actor.organization
+      })
+
+    qb
+      .loadRelationCountAndMap(
+        'user.customers',
+        'user.customers'
+      )
+      .loadRelationCountAndMap(
+        'user.deals',
+        'user.deals'
+      )
+      .loadRelationCountAndMap(
+        'user.tasks',
+        'user.tasks'
+      )
+
+    const user = await qb.getOne()
+
+    if (!user) {
+      throw { status: 404, message: "User not found" }
+    }
+
+    const { customers, deals, tasks } = user as User & { customers: number, deals: number, tasks: number }
+
+    return {
+      id: user.id,
+      organizationId: user.organizationId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      avatar: user.avatar,
+      stats: {
+        customers,
+        deals,
+        tasks
+      }
+    };
+  }
 }
+

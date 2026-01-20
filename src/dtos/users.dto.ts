@@ -49,3 +49,7 @@ export interface ListUsersQueryDTO {
   page: number,
   limit: number
 }
+
+export interface ListUsersByIdDTO {
+  id: string;
+}

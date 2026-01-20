@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/users.service";
-import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO, ListUsersByIdDTO } from "../dtos/users.dto";
 
 const userService = new UserService();
 
@@ -136,6 +136,19 @@ export class UserController {
           totalPages
         }
       })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async getUsersById(req: FastifyRequest<{ Params: ListUsersByIdDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const target = req.params.id;
+
+      const user = await userService.getUsersById({ actor, target })
+      return res.status(200).send(user)
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });
