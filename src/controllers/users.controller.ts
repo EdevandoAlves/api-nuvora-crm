@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/users.service";
-import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO, ListUsersByIdDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO, ListUsersByIdDTO, UpdatePasswordParamsDTO, UpdatePasswordBodyDTO } from "../dtos/users.dto";
 
 const userService = new UserService();
 
@@ -149,6 +149,20 @@ export class UserController {
 
       const user = await userService.getUsersById({ actor, target })
       return res.status(200).send(user)
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async changePasswordById(req: FastifyRequest<{ Params: UpdatePasswordParamsDTO, Body: UpdatePasswordBodyDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user
+      const target = req.params.id;
+      const { currentPassword, newPassword } = req.body
+
+      await userService.updatePassword({ actor, target, currentPassword, newPassword })
+      return res.status(200).send({ message: "password updated successfully" })
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

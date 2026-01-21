@@ -95,6 +95,12 @@ export async function Routers(fastify: FastifyInstance) {
       preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])]
     }
     , UserController.getUsersById);
+
+  fastify.put("/users/:id/password",
+    {
+      preHandler: [authMiddleware]
+    }
+    , UserController.changePasswordById);
   // USER
   // ORG
   fastify.get("/organization/settings",

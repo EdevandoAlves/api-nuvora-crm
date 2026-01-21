@@ -434,5 +434,49 @@ export class UserService {
       }
     };
   }
+
+
+  async updatePassword({
+    actor,
+    target,
+    currentPassword,
+    newPassword,
+  }: {
+    actor: tokenDTO
+    target: string
+    currentPassword: string
+    newPassword: string
+  }) {
+    const isSelf = actor.id === target;
+
+    if (!isSelf) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: actor.id } });
+
+    if (!user) {
+      throw { status: 404, message: 'User not found' }
+    }
+
+    const currentMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!currentMatch) {
+      throw { status: 401, message: 'Invalid current password' }
+    }
+
+    const samePassword = await bcrypt.compare(newPassword, user.password);
+    if (samePassword) {
+      throw {
+        status: 409,
+        message:
+          'The new password cannot be the same as the current password.',
+      }
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await this.userRepo.save(user);
+
+    return;
+  }
 }
 

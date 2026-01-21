@@ -53,3 +53,12 @@ export interface ListUsersQueryDTO {
 export interface ListUsersByIdDTO {
   id: string;
 }
+
+export interface UpdatePasswordParamsDTO {
+  id: string
+}
+
+export interface UpdatePasswordBodyDTO {
+  currentPassword: string,
+  newPassword: string
+}
