@@ -38,10 +38,8 @@ export async function Routers(fastify: FastifyInstance) {
   fastify.post<{ Body: forgotPasswordDTO }>("/auth/forgot-password", UserController.forgotPassword)
 
   fastify.post<{ Params: resetPasswordParamsDTO, Body: resetPasswordBodyDTO }>("/auth/reset-password/:token", UserController.resetPassword)
-
   // AUTH
   // USER
-
   fastify.get("/me/settings",
     {
       preHandler: [authMiddleware], schema: {
@@ -101,26 +99,38 @@ export async function Routers(fastify: FastifyInstance) {
       preHandler: [authMiddleware]
     }
     , UserController.changePasswordById);
+
+  fastify.put("/users/:id/deactivate",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , UserController.deactivateUser);
+
+  fastify.put("/users/:id/reactivate",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.OWNER])]
+    }
+    , UserController.reactivateUser)
   // USER
   // ORG
-  fastify.get("/organization/settings",
-    {
-      preHandler: [authMiddleware], schema: {
-        response: {
-          201: OrgSettingsResponseSchema,
-        }
-      }
-    }
-    , OrganizationController.orgSettings);
-
-  fastify.post<{ Body: tokenDTO }>("/", {
-    schema: {
-      body: OrgRegisterSchema,
-      response: {
-        201: OrgResponseSchema,
-      }
-    }
-  }, OrganizationController.createOrg);
+  // fastify.get("/organization/settings",
+  //   {
+  //     preHandler: [authMiddleware], schema: {
+  //       response: {
+  //         201: OrgSettingsResponseSchema,
+  //       }
+  //     }
+  //   }
+  //   , OrganizationController.orgSettings);
+  //
+  // fastify.post<{ Body: tokenDTO }>("/", {
+  //   schema: {
+  //     body: OrgRegisterSchema,
+  //     response: {
+  //       201: OrgResponseSchema,
+  //     }
+  //   }
+  // }, OrganizationController.createOrg);
 
   // ORG
 }

@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/users.service";
-import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO, ListUsersByIdDTO, UpdatePasswordParamsDTO, UpdatePasswordBodyDTO } from "../dtos/users.dto";
+import { forgotPasswordDTO, userCreateDTO, userLoginDTO, resetPasswordParamsDTO, resetPasswordBodyDTO, UserUpdateDTO, UserUpdateParamsDTO, InviteUserDTO, AcceptInvitationParamsDTO, AcceptInvitationBodyDTO, ListUsersQueryDTO, ListUsersByIdDTO, UpdatePasswordParamsDTO, UpdatePasswordBodyDTO, DeactiveUserDTO, ReactiveUserDTO } from "../dtos/users.dto";
 
 const userService = new UserService();
 
@@ -157,7 +157,7 @@ export class UserController {
 
   static async changePasswordById(req: FastifyRequest<{ Params: UpdatePasswordParamsDTO, Body: UpdatePasswordBodyDTO }>, res: FastifyReply) {
     try {
-      const actor = req.user
+      const actor = req.user;
       const target = req.params.id;
       const { currentPassword, newPassword } = req.body
 
@@ -168,4 +168,35 @@ export class UserController {
       return res.status(status).send({ error: err.message });
     }
   }
+
+  static async deactivateUser(req: FastifyRequest<{ Params: DeactiveUserDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const target = req.params.id;
+
+      await userService.deactivateUser({ actor, target })
+      return res.status(200).send({
+        message: "user successfully deactivated"
+      })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async reactivateUser(req: FastifyRequest<{ Params: ReactiveUserDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const target = req.params.id;
+
+      await userService.reactivateUser({ actor, target })
+      return res.status(200).send({ message: "user successfully reactivate" })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
 }
+
+
+

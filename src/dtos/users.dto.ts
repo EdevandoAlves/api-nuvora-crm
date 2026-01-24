@@ -55,10 +55,18 @@ export interface ListUsersByIdDTO {
 }
 
 export interface UpdatePasswordParamsDTO {
-  id: string
+  id: string;
 }
 
 export interface UpdatePasswordBodyDTO {
   currentPassword: string,
-  newPassword: string
+  newPassword: string;
+}
+
+export interface DeactiveUserDTO {
+  id: string;
+}
+
+export interface ReactiveUserDTO {
+  id: string;
 }

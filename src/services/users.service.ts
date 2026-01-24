@@ -478,5 +478,59 @@ export class UserService {
 
     return;
   }
+
+  async deactivateUser({
+    actor,
+    target
+  }: {
+    actor: tokenDTO
+    target: string
+  }) {
+    if (!["OWNER", "ADMIN"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: target } });
+
+    if (!user) {
+      throw { status: 404, message: 'User not found' }
+    }
+
+    if (user.isActive === false) {
+      throw { status: 404, message: 'User already deactivated' }
+    }
+
+    user.isActive = false;
+    await this.userRepo.save(user);
+
+    return;
+  }
+
+  async reactivateUser({
+    actor,
+    target
+  }: {
+    actor: tokenDTO
+    target: string
+  }) {
+    if (!["OWNER"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: target } });
+
+    if (!user) {
+      throw { status: 404, message: 'User not found' }
+    }
+
+    if (user.isActive === true) {
+      throw { status: 404, Message: 'User already activated' }
+    }
+
+    user.isActive = true;
+    await this.userRepo.save(user);
+
+    return;
+  }
 }
 
