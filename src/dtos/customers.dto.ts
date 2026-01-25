@@ -17,3 +17,10 @@ export interface CustomerCreateDTO extends Required<Pick<CustomerBase, "companyN
   source?: string;
   address?: string
 }
+
+export interface GetCustomerParamsDTO {
+  status?: string;
+  industry?: string;
+  page?: number;
+  limit?: number;
+} 

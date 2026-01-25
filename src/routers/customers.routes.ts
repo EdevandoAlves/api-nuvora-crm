@@ -9,5 +9,11 @@ export async function customersRoutes(fastify: FastifyInstance) {
     {
       preHandler: [authMiddleware, roleMiddleware([UserRole.SALES, UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
     }
-    , CustomerController.createCustomer)
+    , CustomerController.createCustomer);
+
+  fastify.get("/customers",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.SALES, UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , CustomerController.getCustomers)
 }

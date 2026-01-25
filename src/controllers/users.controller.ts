@@ -112,6 +112,7 @@ export class UserController {
     try {
       const { role, isActive, page = 1, limit = 20 } = req.query
       const actor = req.user
+
       const result = await userService.listUsers({ actor, queryFilters: { role, isActive }, pagination: { page, limit } });
       const totalPages = Math.ceil(result.total / limit);
 

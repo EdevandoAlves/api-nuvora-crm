@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { CustomerCreateDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO, GetCustomerParamsDTO } from "../dtos/customers.dto";
 import { tokenDTO } from "../dtos/organizations.dto";
 import { Customer } from "../entity/Customer";
 import { DeepPartial } from "typeorm";
@@ -56,5 +56,59 @@ export class CustomerService {
       ownerId: customer.ownerId,
       createdAt: customer.createdAt
     };
+  }
+
+  async listCustomers({
+    actor,
+    queryFilters,
+    pagination
+  }: {
+    actor: tokenDTO
+    queryFilters?: { status?: string; industry?: string }
+    pagination?: { page?: number; limit?: number }
+  }) {
+    if (!["SALES", "MANAGER", "ADMIN", "OWNER"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    const page =
+      pagination?.page && pagination.page > 0 ? pagination.page : 1
+    const limit =
+      pagination?.limit && pagination.limit > 0 && pagination.limit <= 100
+        ? pagination.limit
+        : 20
+    const skip = (page - 1) * limit
+
+    const qb = this.customerRepo
+      .createQueryBuilder('customer')
+      .where('customer.organizationId = :orgId', {
+        orgId: actor.organization
+      })
+
+    if (queryFilters?.status) {
+      qb.andWhere('customer.status = :status', {
+        status: queryFilters.status
+      })
+    }
+
+    if (queryFilters?.industry) {
+      qb.andWhere('customer.industry = :industry', {
+        industry: queryFilters.industry
+      })
+    }
+
+    const total = await qb.getCount();
+
+    qb
+      .orderBy('customer.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+
+    const customers = await qb.getMany();
+
+    return {
+      customers,
+      total
+    }
   }
 }
