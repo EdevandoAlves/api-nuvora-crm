@@ -486,8 +486,12 @@ export class UserService {
     actor: tokenDTO
     target: string
   }) {
+    if (!actor?.role) {
+      throw { status: 401, message: 'Unauthorized' }
+    }
+
     if (!["OWNER", "ADMIN"].includes(actor.role)) {
-      throw { status: 403, message: "Forbidden" }
+      throw { status: 403, message: 'Forbidden' }
     }
 
     const user = await this.userRepo.findOne({ where: { id: target } });
@@ -497,7 +501,7 @@ export class UserService {
     }
 
     if (user.isActive === false) {
-      throw { status: 404, message: 'User already deactivated' }
+      throw { status: 409, message: 'User already deactivated' }
     }
 
     user.isActive = false;
@@ -513,8 +517,12 @@ export class UserService {
     actor: tokenDTO
     target: string
   }) {
+    if (!actor?.role) {
+      throw { status: 401, message: 'Unauthorized' }
+    }
+
     if (!["OWNER"].includes(actor.role)) {
-      throw { status: 403, message: "Forbidden" }
+      throw { status: 403, message: 'Forbidden' }
     }
 
     const user = await this.userRepo.findOne({ where: { id: target } });
@@ -524,7 +532,7 @@ export class UserService {
     }
 
     if (user.isActive === true) {
-      throw { status: 404, Message: 'User already activated' }
+      throw { status: 409, message: 'User already activated' }
     }
 
     user.isActive = true;
