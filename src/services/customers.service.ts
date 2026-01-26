@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { CustomerCreateDTO, GetCustomerParamsDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO } from "../dtos/customers.dto";
 import { tokenDTO } from "../dtos/organizations.dto";
 import { Customer } from "../entity/Customer";
 import { DeepPartial } from "typeorm";
@@ -80,10 +80,17 @@ export class CustomerService {
     const skip = (page - 1) * limit
 
     const qb = this.customerRepo
-      .createQueryBuilder('customer')
-      .where('customer.organizationId = :orgId', {
+      .createQueryBuilder('customer');
+
+    if (actor.role === 'SALES') {
+      qb.where('customer.ownerId = :userId', {
+        userId: actor.id
+      })
+    } else {
+      qb.where('customer.organizationId = :orgId', {
         orgId: actor.organization
       })
+    }
 
     if (queryFilters?.status) {
       qb.andWhere('customer.status = :status', {
@@ -111,4 +118,6 @@ export class CustomerService {
       total
     }
   }
+
+
 }
