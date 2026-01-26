@@ -23,4 +23,8 @@ export interface GetCustomerParamsDTO {
   industry?: string;
   page?: number;
   limit?: number;
-} 
+}
+
+export interface searchCustomerParamsDTO {
+  q?: string;
+}

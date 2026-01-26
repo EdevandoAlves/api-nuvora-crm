@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CustomerService } from "../services/customers.service";
-import { CustomerCreateDTO, GetCustomerParamsDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO, GetCustomerParamsDTO, searchCustomerParamsDTO } from "../dtos/customers.dto";
 
 const customerService = new CustomerService();
 
@@ -43,6 +43,19 @@ export class CustomerController {
           totalPages
         }
       })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async searchCustomers(req: FastifyRequest<{ Querystring: searchCustomerParamsDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const queryFilters = req.query
+
+      const customers = await customerService.searchCustomers({ actor, queryFilters });
+      return res.status(200).send({ customers });
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

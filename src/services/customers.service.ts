@@ -1,5 +1,5 @@
 import { AppDataSource } from "../data-source";
-import { CustomerCreateDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO, searchCustomerParamsDTO } from "../dtos/customers.dto";
 import { tokenDTO } from "../dtos/organizations.dto";
 import { Customer } from "../entity/Customer";
 import { DeepPartial } from "typeorm";
@@ -119,5 +119,57 @@ export class CustomerService {
     }
   }
 
+  async searchCustomers({
+    actor,
+    queryFilters
+  }: {
+    actor: tokenDTO
+    queryFilters: searchCustomerParamsDTO
+  }) {
+    if (!queryFilters.q) {
+      throw { status: 400, message: 'Search query is required' }
+    }
 
+    const qb = this.customerRepo.createQueryBuilder('customer');
+
+    if (actor.role === 'SALES') {
+      qb.where('customer.ownerId = :userId', {
+        userId: actor.id
+      })
+    } else {
+      qb.where('customer.organizationId = :orgId', {
+        orgId: actor.organization
+      })
+    }
+
+    qb
+      .addSelect(
+        `
+    CASE
+      WHEN customer.companyName ILIKE :exact THEN 3
+      WHEN customer.website ILIKE :exact THEN 2
+      WHEN customer.cnpj ILIKE :exact THEN 1
+      ELSE 0
+    END
+    `,
+        'relevance'
+      )
+      .andWhere(
+        `
+    customer.companyName ILIKE :q
+    OR customer.cnpj ILIKE :q
+    OR customer.website ILIKE :q
+    `
+      )
+      .setParameters({
+        q: `%${queryFilters.q}%`,
+        exact: `${queryFilters.q}%`
+      })
+      .orderBy('relevance', 'DESC')
+      .limit(20);
+
+    const customers = await qb.getMany();
+
+    return customers;
+  }
 }
