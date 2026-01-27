@@ -1,146 +1,119 @@
-# NuvoraCRM
+# Nuvora CRM API
 
-> Backend de CRM SaaS multi-tenant, focado em isolamento de dados, controle de acesso e arquitetura limpa.
-> Projeto autoral, desenvolvido para simular desafios reais de um produto B2B.
+![Licença](https://img.shields.io/badge/license-MIT-blue.svg)
+![TypeScript](https://img.shields.io/badge/typescript-%233178C6.svg?style=flat&logo=typescript&logoColor=white)
+![Fastify](https://img.shields.io/badge/fastify-%23000000.svg?style=flat&logo=fastify&logoColor=white)
+![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)
 
-## 🚧 Em desenvolvimento ativo  
-O foco atual é:
-- consolidação do RBAC
-- isolamento por organização
-- fluxos de usuário (Rotas e regras de negocio dos usuarios)
+> API backend para um CRM SaaS multi-tenant, focado em isolamento de dados, controle de acesso baseado em função (RBAC) e arquitetura limpa.
+
+---
+
+### 🚧 **Projeto em Desenvolvimento Ativo** 🚧
+
+Este é um projeto autoral, desenvolvido para simular desafios reais de um produto B2B e para fins de estudo e portfólio. O foco atual é a consolidação do RBAC, isolamento por organização e a implementação dos fluxos de negócio para cada entidade.
+
+---
+
+## 📋 Tabela de Conteúdos
+
+1.  [Sobre o Projeto](#-sobre-o-projeto)
+    *   [Recursos Técnicos](#-recursos-técnicos)
+    *   [Stack de Tecnologia](#️-stack-de-tecnologia)
+2.  [🚀 Começando](#-começando)
+    *   [Pré-requisitos](#pré-requisitos)
+    *   [Instalação](#instalação)
+3.  [📜 Uso e Endpoints da API](#-uso-e-endpoints-da-api)
+4.  [🗃️ Esquema do Banco de Dados](#️-esquema-do-banco-de-dados)
+5.  [📄 Licença](#-licença)
+
+## ✨ Sobre o Projeto
 
 NuvoraCRM é um backend de CRM poderoso, escalável e fácil de usar, projetado para gerenciar organizações, usuários, clientes, negócios e muito mais. Construído com uma pilha de tecnologia moderna, ele fornece uma base robusta para a construção de uma aplicação de CRM completa.
 
-## ✨ Recursos Técnicos
+### ⭐ Recursos Técnicos
 
-- Multi-tenancy com isolamento por organização em todas as queries
-- RBAC com validação de actor vs target em operações sensíveis
-- Fluxo de convite de usuários com token de ativação
-- Autenticação JWT stateless
-- Separação clara entre Controller / Service / Repository
-- DTOs semânticos por caso de uso
+*   **Multi-tenancy:** Isolamento total dos dados por organização em todas as queries.
+*   **RBAC (Role-Based Access Control):** Validação de permissões (ator vs. alvo) em operações sensíveis.
+*   **Fluxo de Convite:** Sistema de convite de usuários com token de ativação por e-mail.
+*   **Autenticação:** JWT (JSON Web Tokens) stateless para segurança e escalabilidade.
+*   **Arquitetura Limpa:** Separação clara de responsabilidades entre `Controller`, `Service` e `Repository`.
+*   **DTOs (Data Transfer Objects):** Objetos semânticos para cada caso de uso, garantindo clareza e segurança na transferência de dados.
 
-## 🛠️ Stack de Tecnologia
+### 🛠️ Stack de Tecnologia
 
-- **Backend:** [Fastify](https://www.fastify.io/)
-- **ORM:** [TypeORM](https://typeorm.io/)
-- **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/)
-- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-- **Autenticação:** JWT (JSON Web Tokens)
+*   **Backend:** [Fastify](https://www.fastify.io/)
+*   **ORM:** [TypeORM](https://typeorm.io/)
+*   **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/)
+*   **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+*   **Containerização:** [Docker](https://www.docker.com/)
 
 ## 🚀 Começando
 
+Siga estas instruções para ter uma cópia do projeto rodando localmente para desenvolvimento e testes.
+
 ### Pré-requisitos
 
-- [Node.js](https://nodejs.org/) (v18 ou superior)
-- [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/)
+*   [Node.js](https://nodejs.org/) (v18 ou superior)
+*   [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/)
+*   [NPM](https://www.npmjs.com/)
 
-### 1. Clone o repositório
+### Instalação
 
-```bash
-git clone https://github.com/EdevandoAlves/api-nuvora-crm.git
-cd nuvoraCrm
-```
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/EdevandoAlves/api-nuvora-crm.git
+    cd api-nuvora-crm
+    ```
 
-### 2. Configure as variáveis de ambiente
+2.  **Instale as dependências do projeto:**
+    ```bash
+    npm install
+    ```
 
-Crie um arquivo `.env` copiando o arquivo de exemplo:
+3.  **Configure as variáveis de ambiente:**
+    Copie o arquivo de exemplo e preencha com suas informações.
+    ```bash
+    cp .env-example .env
+    ```
+    > **Nota:** As credenciais padrão no `.env-example` já estão configuradas para funcionar com o `docker-compose.yml`.
 
-```bash
-cp .env-example .env
-```
+4.  **Inicie o banco de dados com Docker:**
+    Este comando irá iniciar um container PostgreSQL em segundo plano.
+    ```bash
+    docker-compose up -d
+    ```
 
-Agora, edite o arquivo `.env` com suas credenciais do banco de dados. As credenciais padrão para o contêiner Docker são:
+5.  **Execute as migrações do TypeORM:**
+    Este comando criará as tabelas no seu banco de dados.
+    ```bash
+    npm run migration:run
+    ```
 
-```
-TYPEORM_CONNECTION=postgres
-TYPEORM_HOST=localhost
-TYPEORM_PORT=5432
-TYPEORM_USERNAME=postgres
-TYPEORM_PASSWORD=1234
-TYPEORM_DATABASE=nuvora
-TYPEORM_ENTITIES=./src/entity/*.ts
-TYPEORM_MIGRATIONS=./src/migration/*.ts
-```
+6.  **Inicie o servidor de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
 
-### 3. Inicie o banco de dados
+O servidor estará disponível em `http://localhost:8000` (ou na porta que você definir no seu arquivo `.env`).
 
-Use o Docker Compose para iniciar o banco de dados PostgreSQL em segundo plano:
+## 📜 Uso e Endpoints da API
 
-```bash
-docker-compose up -d
-```
+A seguir, uma lista de alguns endpoints já implementados ou planejados.
 
-### 4. Instale as dependências
+*   `POST /auth/register`: Registra uma nova organização e seu usuário proprietário.
+*   `POST /auth/login`: Realiza o login e retorna um token JWT.
+*   `GET /users`: Lista os usuários da organização.
+*   `POST /customers`: Cria um novo cliente.
+*   `GET /customers`: Lista os clientes da organização.
+*   ... e muito mais!
 
-```bash
-npm install
-```
-
-### 5. Execute as migrações do banco de dados
-
-Aplique o esquema inicial e quaisquer migrações subsequentes ao banco de dados:
-
-```bash
-npm run migration:run
-```
-
-
-### 6. Inicie o servidor de desenvolvimento
-
-```bash
-npm run dev
-```
-
-O servidor será iniciado em `http://localhost:8000`.
-
-## 📜 Endpoints da API
-
-### Autenticação
-
-- `POST /auth/register`: Registre uma nova organização e seu primeiro usuário (proprietário). (Feito!)
-- `POST /auth/login`: Faça o login de um usuário e receba um token JWT.
-
-### Organizações
-
-- `GET /organization/settings`: Obtenha as configurações da organização do usuário logado.
-- `PUT /organization/upgrade`: Atualize o plano de assinatura da organização.
-
-### Usuários
-
-- `POST /users`: Crie e convide um novo usuário para a organização.
-- `GET /users`: Liste os usuários da organização.
-
-### Clientes
-
-- `POST /customers`: Crie um novo cliente.
-- `GET /customers`: Liste os clientes (com filtros por status, setor, etc.).
-- `PUT /customers/:id`: Atualize os detalhes de um cliente.
-- `PUT /customers/:id/transfer`: Transfira a propriedade de um cliente para outro usuário.
-
-### Contatos
-
-- `POST /customers/:customerId/contacts`: Adicione um novo contato a um cliente.
-- `GET /customers/:customerId/contacts`: Liste todos os contatos de um cliente.
-
-### Negócios
-
-- `POST /deals`: Crie um novo negócio de vendas.
-- `GET /deals/pipeline`: Visualize o pipeline de vendas, agrupado por estágio.
-- `PUT /deals/:id/stage`: Atualize o estágio de um negócio.
-
-...e muitos mais, conforme for sendo criados ira ser adicionado aqui.
+> A documentação completa da API será adicionada futuramente (Swagger/OpenAPI).
 
 ## 🗃️ Esquema do Banco de Dados
 
-O banco de dados foi projetado para ser escalável e eficiente, com relacionamentos claros entre as entidades.
+O banco de dados foi projetado para ser escalável e eficiente, com relacionamentos claros entre as entidades principais: `Organization`, `User`, `Customer`, `Contact`, `Deal`, `Task`, `Product`, etc.
 
-- **Organization:** A entidade de nível superior, representando uma empresa que usa o CRM.
-- **User:** Pertence a uma Organização e tem uma função específica.
-- **Customer:** Uma empresa para a qual sua organização está vendendo. Pertence a uma Organização e tem um proprietário (Usuário).
-- **Contact:** Uma pessoa que trabalha em um Cliente.
-- **Interaction:** Um registro de uma comunicação ou atividade com um Cliente (por exemplo, chamada, e-mail, reunião).
-- **Deal:** Uma venda em potencial, com um valor, estágio e data de fechamento esperada.
-- **Task:** Um item de ação para um Usuário concluir.
-- **Product:** Um item em seu catálogo de produtos.
-- **DealProduct:** Uma tabela de junção que vincula Produtos a Negócios, incluindo quantidade e preço para esse negócio específico.
+## 📄 Licença
+
+Distribuído sob a Licença MIT. Veja `LICENSE.txt` para mais informações.
