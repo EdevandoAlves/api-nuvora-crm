@@ -21,5 +21,11 @@ export async function customersRoutes(fastify: FastifyInstance) {
     {
       preHandler: [authMiddleware]
     }
-    , CustomerController.searchCustomers)
+    , CustomerController.searchCustomers);
+
+  fastify.get("/customers/:id",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.SALES, UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , CustomerController.getCustomerDetails);
 }

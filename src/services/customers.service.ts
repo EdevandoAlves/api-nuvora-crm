@@ -172,4 +172,28 @@ export class CustomerService {
 
     return customers;
   }
+
+  async getCustomerDetails({
+    actor,
+    target
+  }: {
+    actor: tokenDTO
+    target: string
+  }) {
+    if (!["SALES", "MANAGER", "ADMIN", "OWNER"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    if (!actor.organization) {
+      throw { status: 400, message: 'User has no organization' };
+    }
+
+    const costumer = await this.customerRepo.findOne({ where: { id: target, organizationId: actor.organization } });
+
+    if (!costumer) {
+      throw { status: 400, message: 'User not found' };
+    }
+
+    return costumer;
+  }
 }

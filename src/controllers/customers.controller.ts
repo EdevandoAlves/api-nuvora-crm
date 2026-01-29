@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CustomerService } from "../services/customers.service";
-import { CustomerCreateDTO, GetCustomerParamsDTO, searchCustomerParamsDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO, getCustomerDetailsParamsDTO, GetCustomerParamsDTO, searchCustomerParamsDTO } from "../dtos/customers.dto";
 
 const customerService = new CustomerService();
 
@@ -56,6 +56,19 @@ export class CustomerController {
 
       const customers = await customerService.searchCustomers({ actor, queryFilters });
       return res.status(200).send({ customers });
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async getCustomerDetails(req: FastifyRequest<{ Params: getCustomerDetailsParamsDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const target = req.params.id;
+
+      const customer = await customerService.getCustomerDetails({ actor, target });
+      return res.status(200).send({ customer })
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

@@ -28,3 +28,7 @@ export interface GetCustomerParamsDTO {
 export interface searchCustomerParamsDTO {
   q?: string;
 }
+
+export interface getCustomerDetailsParamsDTO {
+  id: string
+}
