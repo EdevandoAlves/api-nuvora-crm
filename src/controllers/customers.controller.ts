@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CustomerService } from "../services/customers.service";
-import { CustomerCreateDTO, getCustomerDetailsParamsDTO, GetCustomerParamsDTO, searchCustomerParamsDTO } from "../dtos/customers.dto";
+import { CustomerCreateDTO, getCustomerDetailsParamsDTO, GetCustomerParamsDTO, searchCustomerParamsDTO, transferCustomerOwnershipDTO } from "../dtos/customers.dto";
 
 const customerService = new CustomerService();
 
@@ -69,6 +69,19 @@ export class CustomerController {
 
       const customer = await customerService.getCustomerDetails({ actor, target });
       return res.status(200).send({ customer })
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async transferCustomerOwnership(req: FastifyRequest<{ Body: transferCustomerOwnershipDTO }>, res: FastifyReply) {
+    try {
+      const actor = req.user;
+      const target = req.body.id;
+
+      await customerService.transferCustomerOwnership({ actor, target });
+      return res.status(200).send({ message: 'Customer successfully transferred' });
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

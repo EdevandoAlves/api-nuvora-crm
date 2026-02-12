@@ -28,4 +28,10 @@ export async function customersRoutes(fastify: FastifyInstance) {
       preHandler: [authMiddleware, roleMiddleware([UserRole.SALES, UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
     }
     , CustomerController.getCustomerDetails);
+
+  fastify.put("/customers/:id/transfer",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , CustomerController.transferCustomerOwnership)
 }

@@ -32,3 +32,7 @@ export interface searchCustomerParamsDTO {
 export interface getCustomerDetailsParamsDTO {
   id: string
 }
+
+export interface transferCustomerOwnershipDTO {
+  id: string
+}

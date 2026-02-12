@@ -3,9 +3,11 @@ import { CustomerCreateDTO, searchCustomerParamsDTO } from "../dtos/customers.dt
 import { tokenDTO } from "../dtos/organizations.dto";
 import { Customer } from "../entity/Customer";
 import { DeepPartial } from "typeorm";
+import { User } from "../entity/User";
 
 export class CustomerService {
   private customerRepo = AppDataSource.getRepository(Customer);
+  private userRepo = AppDataSource.getRepository(User);
 
   async createCustomer({
     actor,
@@ -195,5 +197,29 @@ export class CustomerService {
     }
 
     return costumer;
+  }
+
+  async transferCustomerOwnership({
+    actor,
+    target
+  }: {
+    actor: tokenDTO
+    target: string
+  }) {
+    if (!["MANAGER", "ADMIN", "OWNER"].includes(actor.role)) {
+      throw { status: 403, message: "Forbidden" }
+    }
+
+    if (!actor.organization) {
+      throw { status: 400, message: 'User has no organization' };
+    }
+
+    const newOwner = await this.userRepo.findOne({ where: { id: target, organizationId: actor.organization } });
+
+    if (!newOwner) {
+      throw { status: 400, message: 'User not found' };
+    }
+
+    console.log(newOwner);
   }
 }
