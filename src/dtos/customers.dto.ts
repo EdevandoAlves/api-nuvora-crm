@@ -36,3 +36,7 @@ export interface getCustomerDetailsParamsDTO {
 export interface transferCustomerOwnershipDTO {
   id: string
 }
+
+export interface updateCustomer {
+
+}

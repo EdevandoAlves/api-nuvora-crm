@@ -6,14 +6,13 @@ import { roleMiddleware } from "../middlewares/role.middleware";
 import { UserRole } from "../entity/User";
 
 export async function usersRoutes(fastify: FastifyInstance) {
-  fastify.get("/me/settings",
-    {
-      preHandler: [authMiddleware], schema: {
-        response: {
-          201: UserSettingsResponseSchema,
-        }
+  fastify.get("/me/settings", {
+    preHandler: [authMiddleware], schema: {
+      response: {
+        200: UserSettingsResponseSchema,
       }
     }
+  }
     , UserController.getUserProfile);
 
   fastify.patch("/me/settings",
@@ -21,19 +20,18 @@ export async function usersRoutes(fastify: FastifyInstance) {
       preHandler: [authMiddleware], schema: {
         body: UserUpdateSchema,
         response: {
-          201: UserUpdateResponseSchema,
+          200: UserUpdateResponseSchema,
         }
       }
     },
     UserController.updateCurrentUser);
-
 
   fastify.patch("/users/:id",
     {
       preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])], schema: {
         body: UserUpdateSchema,
         response: {
-          201: UserUpdateResponseSchema,
+          200: UserUpdateResponseSchema,
         }
       }
     },
@@ -50,7 +48,6 @@ export async function usersRoutes(fastify: FastifyInstance) {
       preHandler: [authMiddleware, roleMiddleware([UserRole.ADMIN, UserRole.OWNER])]
     }
     , UserController.getListUsers);
-
 
   fastify.get("/users/:id",
     {

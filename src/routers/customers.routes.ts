@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { roleMiddleware } from "../middlewares/role.middleware";
-import { UserRole } from "../entity/User";
+import { User, UserRole } from "../entity/User";
 import { CustomerController } from "../controllers/customers.controller";
 
 export async function customersRoutes(fastify: FastifyInstance) {
@@ -29,9 +29,16 @@ export async function customersRoutes(fastify: FastifyInstance) {
     }
     , CustomerController.getCustomerDetails);
 
+  fastify.put("/customers/:id",
+    {
+      preHandler: [authMiddleware, roleMiddleware([UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
+    }
+    , CustomerController.updateCustomer);
+
   fastify.put("/customers/:id/transfer",
     {
       preHandler: [authMiddleware, roleMiddleware([UserRole.MANAGER, UserRole.ADMIN, UserRole.OWNER])]
     }
-    , CustomerController.transferCustomerOwnership)
+    , CustomerController.transferCustomerOwnership);
+
 }

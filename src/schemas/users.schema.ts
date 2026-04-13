@@ -14,9 +14,15 @@ export const UserCreateSchema = {
 export const UserResponseSchema = {
   type: "object",
   properties: {
-    email: { type: "string", format: "email" },
-    firstName: { type: "string" },
-    lastName: { type: "string" },
+    user: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        email: { type: "string", format: "email" },
+        firstName: { type: "string" },
+        lastName: { type: "string" },
+      }
+    }
   },
 } as const;
 
@@ -65,11 +71,16 @@ export const ForgotPasswordSchema = {
 export const UserSettingsResponseSchema = {
   type: "object",
   properties: {
-    id: { type: "string", format: "uuid" },
-    organizationId: { type: "string" },
-    email: { type: "string" },
-    firstName: { type: "string" },
-    lastName: { type: "string" },
+    user: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        organizationId: { type: "string" },
+        email: { type: "string" },
+        firstName: { type: "string" },
+        lastName: { type: "string" },
+      }
+    }
   },
 } as const;
 
@@ -84,11 +95,15 @@ export const UserUpdateSchema = {
 }
 
 export const UserUpdateResponseSchema = {
-
   type: "object",
   properties: {
-    firstName: { type: 'string' },
-    lastName: { type: 'string' }
+    userUpdated: {
+      type: "object",
+      properties: {
+        firstName: { type: 'string' },
+        lastName: { type: 'string' }
+      }
+    }
   },
 }
 

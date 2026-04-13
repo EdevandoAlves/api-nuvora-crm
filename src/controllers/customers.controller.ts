@@ -75,13 +75,23 @@ export class CustomerController {
     }
   }
 
-  static async transferCustomerOwnership(req: FastifyRequest<{ Body: transferCustomerOwnershipDTO }>, res: FastifyReply) {
+  static async transferCustomerOwnership(req: FastifyRequest<{ Params: { id: string }, Body: { id: string } }>, res: FastifyReply) {
     try {
       const actor = req.user;
-      const target = req.body.id;
+      const customerId = req.params.id;
+      const newOwnerId = req.body.id;
 
-      await customerService.transferCustomerOwnership({ actor, target });
+      await customerService.transferCustomerOwnership({ actor, customerId, newOwnerId });
       return res.status(200).send({ message: 'Customer successfully transferred' });
+    } catch (err) {
+      const status = err.status || 400;
+      return res.status(status).send({ error: err.message });
+    }
+  }
+
+  static async updateCustomer(req: FastifyRequest<{}>, res: FastifyReply) {
+    try {
+
     } catch (err) {
       const status = err.status || 400;
       return res.status(status).send({ error: err.message });

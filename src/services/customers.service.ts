@@ -201,10 +201,12 @@ export class CustomerService {
 
   async transferCustomerOwnership({
     actor,
-    target
+    customerId,
+    newOwnerId
   }: {
     actor: tokenDTO
-    target: string
+    customerId: string
+    newOwnerId: string
   }) {
     if (!["MANAGER", "ADMIN", "OWNER"].includes(actor.role)) {
       throw { status: 403, message: "Forbidden" }
@@ -214,12 +216,25 @@ export class CustomerService {
       throw { status: 400, message: 'User has no organization' };
     }
 
-    const newOwner = await this.userRepo.findOne({ where: { id: target, organizationId: actor.organization } });
+    const customer = await this.customerRepo.findOne({
+      where: { id: customerId, organizationId: actor.organization }
+    });
 
-    if (!newOwner) {
-      throw { status: 400, message: 'User not found' };
+    if (!customer) {
+      throw { status: 404, message: 'Customer not found' };
     }
 
-    console.log(newOwner);
+    const newOwner = await this.userRepo.findOne({
+      where: { id: newOwnerId, organizationId: actor.organization }
+    });
+
+    if (!newOwner) {
+      throw { status: 400, message: 'New owner not found' };
+    }
+
+    await this.customerRepo.update(
+      { id: customerId, organizationId: actor.organization },
+      { ownerId: newOwner.id }
+    );
   }
 }
