@@ -51,4 +51,4 @@ import { User } from "./entity/User";
     UsersModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

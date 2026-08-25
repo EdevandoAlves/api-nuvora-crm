@@ -22,16 +22,21 @@
     "migration:revert": "typeorm-ts-node-commonjs -d src/data-source.ts migration:revert"
   },
   "dependencies": {
+    "@fastify/static": "^10.1.3",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-fastify": "^11.2.1",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
+    "@nestjs/swagger": "^11.4.7",
     "@nestjs/typeorm": "^11.0.0",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "dotenv": "^16.6.1",
     "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
     "typeorm": "0.3.27"
   },
   "devDependencies": {
@@ -40,6 +45,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
