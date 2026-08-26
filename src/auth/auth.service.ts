@@ -23,7 +23,7 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 @Injectable()
-export class UsersService {
+export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
@@ -33,7 +33,7 @@ export class UsersService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto) {
     const { email, password, firstName, lastName, companyName, cnpj } =
