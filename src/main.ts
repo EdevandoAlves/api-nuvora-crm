@@ -14,12 +14,19 @@ async function bootstrap() {
   );
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
   );
 
   const config = new DocumentBuilder().setTitle("CRM NUVORA").build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, documentFactory);
+
+  if (process.env.NODE_ENV !== "production") {
+    SwaggerModule.setup("api", app, documentFactory);
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }
