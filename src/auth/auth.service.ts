@@ -1,12 +1,19 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { User, UserRole } from "src/entity/User";
 import { DataSource, QueryFailedError, Repository } from "typeorm";
 import { Organization } from "src/entity/Organization";
 import { generateSlug } from "src/common/utils/generate-slug";
+import { LoginDto } from "./dto/login.dto";
+import { UserResponseDto } from "./dto/user-response.dto";
 import * as bcrypt from "bcrypt";
+import * as jwt from "jsonwebtoken";
+import { ConfigService } from "@nestjs/config";
 
 function isUniqueViolation(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) {
@@ -33,9 +40,11 @@ export class AuthService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    private readonly configService: ConfigService,
   ) { }
 
-  async create(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const { email, password, firstName, lastName, companyName, cnpj } =
       createUserDto;
     const passwordHash = await bcrypt.hash(password, 12);
@@ -83,13 +92,22 @@ export class AuthService {
         });
 
         await userRepo.save(user);
-        const { password: _, ...safeUser } = user;
-        void _;
+
+        const userResponse = new UserResponseDto();
+        userResponse.email = user.email;
+        userResponse.firstName = user.firstName;
+        userResponse.lastName = user.lastName;
+        userResponse.companyName = org.name;
+        userResponse.cnpj = org.cnpj;
+
+        if (user.avatar) {
+          userResponse.avatar = user.avatar;
+        }
 
         org.ownerId = user.id;
         await orgRepo.save(org);
 
-        return safeUser;
+        return userResponse;
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -101,19 +119,41 @@ export class AuthService {
     }
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
+  async login(loginDto: LoginDto): Promise<string> {
+    const { email, password } = loginDto;
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    const user = await this.userRepo.findOneBy({ email });
+    if (!user || user.isActive !== true) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    const org = await this.orgRepo.findOneBy({ id: user.organizationId });
+    if (org?.isActive !== true) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    const matchPassword = await bcrypt.compare(password, user.password);
+    if (!matchPassword) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    interface jwtPayload {
+      id: string;
+      organization: string;
+      role: string;
+    }
+
+    const payload: jwtPayload = {
+      id: user.id,
+      organization: user.organizationId,
+      role: user.role,
+    };
+
+    const secret = this.configService.getOrThrow<string>("SECRET_KEY");
+
+    const token = jwt.sign(payload, secret, {
+      expiresIn: "1d",
+    });
+    return token;
   }
 }
