@@ -1,6 +1,8 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -13,7 +15,10 @@ import { LoginDto } from "./dto/login.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
+import { randomBytes } from "node:crypto";
 import { ConfigService } from "@nestjs/config";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { MailerService } from "@nestjs-modules/mailer";
 
 function isUniqueViolation(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) {
@@ -42,7 +47,9 @@ export class AuthService {
     private readonly dataSource: DataSource,
 
     private readonly configService: ConfigService,
-  ) { }
+
+    private readonly mailerService: MailerService,
+  ) {}
 
   async register(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const { email, password, firstName, lastName, companyName, cnpj } =
@@ -155,5 +162,48 @@ export class AuthService {
       expiresIn: "1d",
     });
     return token;
+  }
+
+  async forgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const { email } = forgotPasswordDto;
+    const message =
+      "If an account exists for this email, a reset link will be sent shortly.";
+
+    const user = await this.userRepo.findOneBy({ email });
+    if (!user) {
+      return {
+        message,
+      };
+    }
+
+    const token = randomBytes(32).toString("hex");
+    user.expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    const tokenHash = await bcrypt.hash(token, 10);
+    user.resetToken = tokenHash;
+    await this.userRepo.save(user);
+
+    const resetLink = `${this.configService.getOrThrow<string>("FRONTEND_URI")}reset-link?token=${token}`;
+
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: "Recuperar senha",
+        html: `
+      <h1> Recuperação de Senha </h1>
+      <p> Você solicitou a recuperação de senha.</p>
+      <p> Clique no link abaixo para redefinir sua senha: </p>
+      <a href="${resetLink}"> Redefinir Senha </a>
+      <p> Este link expira em 1 hora.</p>
+      <p> Se você não solicitou isso, ignore este email.</p>
+      `,
+      });
+
+      return { message };
+    } catch (er) {
+      throw new InternalServerErrorException("Failed to send recovery email.");
+    }
   }
 }
