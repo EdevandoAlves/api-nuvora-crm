@@ -248,6 +248,6 @@ export class AuthService {
     user.resetToken = null;
     await this.userRepo.save(user);
 
-    return { successMessage };
+    return { message: successMessage };
   }
 }
