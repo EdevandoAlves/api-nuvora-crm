@@ -55,6 +55,9 @@ export class AuthService {
       createUserDto;
     const passwordHash = await bcrypt.hash(password, 12);
 
+    const conflictMessage = "Unable to create account with these details"
+    const slugMessage = "Company name cannot generate a valid slug"
+
     try {
       return await this.dataSource.transaction(async (manager) => {
         const userRepo = manager.getRepository(User);
@@ -63,13 +66,13 @@ export class AuthService {
         const userExists = await userRepo.findOneBy({ email });
         if (userExists) {
           throw new ConflictException(
-            "Unable to create account with these details",
+            conflictMessage,
           );
         }
         const slug = generateSlug(companyName);
         if (!slug) {
           throw new ConflictException(
-            "Company name cannot generate a valid slug",
+            slugMessage,
           );
         }
         const orgExists = await orgRepo.findOne({
@@ -77,12 +80,12 @@ export class AuthService {
         });
         if (orgExists?.cnpj === cnpj) {
           throw new ConflictException(
-            "Unable to create account with these details",
+            conflictMessage,
           );
         }
         if (orgExists?.slug === slug) {
           throw new ConflictException(
-            "Unable to create account with these details",
+            conflictMessage,
           );
         }
         const org = orgRepo.create({ name: companyName, slug, cnpj });
@@ -118,7 +121,7 @@ export class AuthService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          "Unable to create account with these details",
+          conflictMessage
         );
       }
       throw error;
@@ -128,19 +131,21 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<string> {
     const { email, password } = loginDto;
 
+    const invalidMessage = "Invalid credentials"
+
     const user = await this.userRepo.findOneBy({ email });
     if (!user || user.isActive !== true) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(invalidMessage);
     }
 
     const org = await this.orgRepo.findOneBy({ id: user.organizationId });
     if (org?.isActive !== true) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(invalidMessage);
     }
 
     const matchPassword = await bcrypt.compare(password, user.password);
     if (!matchPassword) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(invalidMessage);
     }
 
     interface jwtPayload {
@@ -169,6 +174,7 @@ export class AuthService {
     const { email } = forgotPasswordDto;
     const message =
       "If an account exists for this email, a reset link will be sent shortly.";
+    const failedMessage = "Failed to send recovery email"
 
     const user = await this.userRepo.findOneBy({ email });
     if (!user) {
@@ -202,7 +208,7 @@ export class AuthService {
 
       return { message };
     } catch (er) {
-      console.error("Failed to send recovery email", er);
+      console.error(failedMessage, er);
     }
 
     return { message };
@@ -213,8 +219,9 @@ export class AuthService {
   ): Promise<{ message: string }> {
     const { token, password } = resetPasswordDto;
 
+    const successMessage = "Password reset successfully"
     const message =
-      "If that email address is in our database, we will send you an email to reset your password.";
+      "Invalid or expired reset token";
 
     const queryToken = createHash("sha256").update(token).digest("hex");
 
@@ -222,16 +229,17 @@ export class AuthService {
       where: { resetToken: queryToken },
     });
     if (!user || !user.expiresAt || user.expiresAt < new Date()) {
-      return { message };
+      throw new BadRequestException(message);
+      ;
     }
 
-    if (!user || !user.isActive) {
-      return { message };
+    if (!user.isActive) {
+      throw new BadRequestException(message);
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (passwordMatch) {
-      return { message };
+      throw new BadRequestException(message);
     }
 
     const newPassword = await bcrypt.hash(password, 10);
@@ -240,6 +248,6 @@ export class AuthService {
     user.resetToken = null;
     await this.userRepo.save(user);
 
-    return { message };
+    return { message: successMessage };
   }
 }
