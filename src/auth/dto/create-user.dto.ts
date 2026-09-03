@@ -11,7 +11,7 @@ import {
 } from "class-validator";
 
 export class CreateUserDto {
-  @Transform(({ value }) =>
+  @Transform(({ value }): string =>
     typeof value === "string" ? value.trim().toLowerCase() : value,
   )
   @IsEmail()

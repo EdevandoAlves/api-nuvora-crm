@@ -1,8 +1,6 @@
 import {
   ConflictException,
   Injectable,
-  InternalServerErrorException,
-  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -15,10 +13,11 @@ import { LoginDto } from "./dto/login.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { ConfigService } from "@nestjs/config";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { MailerService } from "@nestjs-modules/mailer";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 
 function isUniqueViolation(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) {
@@ -181,11 +180,11 @@ export class AuthService {
     const token = randomBytes(32).toString("hex");
     user.expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    const tokenHash = await bcrypt.hash(token, 10);
+    const tokenHash = createHash("sha256").update(token).digest("hex");
     user.resetToken = tokenHash;
     await this.userRepo.save(user);
 
-    const resetLink = `${this.configService.getOrThrow<string>("FRONTEND_URI")}reset-link?token=${token}`;
+    const resetLink = `${this.configService.getOrThrow<string>("FRONTEND_URI")}reset-link#token=${token}`;
 
     try {
       await this.mailerService.sendMail({
@@ -203,7 +202,44 @@ export class AuthService {
 
       return { message };
     } catch (er) {
-      throw new InternalServerErrorException("Failed to send recovery email.");
+      console.error("Failed to send recovery email", er);
     }
+
+    return { message };
+  }
+
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    const { token, password } = resetPasswordDto;
+
+    const message =
+      "If that email address is in our database, we will send you an email to reset your password.";
+
+    const queryToken = createHash("sha256").update(token).digest("hex");
+
+    const user = await this.userRepo.findOne({
+      where: { resetToken: queryToken },
+    });
+    if (!user || !user.expiresAt || user.expiresAt < new Date()) {
+      return { message };
+    }
+
+    if (!user || !user.isActive) {
+      return { message };
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (passwordMatch) {
+      return { message };
+    }
+
+    const newPassword = await bcrypt.hash(password, 10);
+    user.password = newPassword;
+    user.expiresAt = null;
+    user.resetToken = null;
+    await this.userRepo.save(user);
+
+    return { message };
   }
 }

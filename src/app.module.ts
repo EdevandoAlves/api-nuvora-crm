@@ -13,10 +13,12 @@ import { Organization } from "./entity/Organization";
 import { Product } from "./entity/Product";
 import { Task } from "./entity/Task";
 import { User } from "./entity/User";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 
 @Module({
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
@@ -48,6 +50,12 @@ import { User } from "./entity/User";
         dropSchema: false,
       }),
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 60,
+      },
+    ]),
     AuthModule,
   ],
 })
