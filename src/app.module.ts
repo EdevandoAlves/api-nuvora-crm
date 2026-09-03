@@ -15,6 +15,7 @@ import { Task } from "./entity/Task";
 import { User } from "./entity/User";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
+import { UsersModule } from "./users/users.module";
 
 @Module({
   controllers: [AppController],
@@ -57,6 +58,7 @@ import { APP_GUARD } from "@nestjs/core";
       },
     ]),
     AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
