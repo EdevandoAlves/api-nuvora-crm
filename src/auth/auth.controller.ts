@@ -6,22 +6,44 @@ import { UserResponseDto } from "./dto/user-response.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Throttle } from "@nestjs/throttler";
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
+@ApiTags("Authentication")
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post("register")
+  @ApiOperation({ summary: "Register an organization owner" })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({ status: 201, type: UserResponseDto })
   register(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.authService.register(createUserDto);
   }
 
   @Post("login")
+  @ApiOperation({ summary: "Authenticate and receive an access token" })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 201,
+    description: "JWT access token",
+    schema: { type: "string" },
+  })
   login(@Body() loginDto: LoginDto): Promise<string> {
     return this.authService.login(loginDto);
   }
 
   @Post("forgot-password")
+  @ApiOperation({ summary: "Request a password-reset email" })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({
+    status: 201,
+    schema: {
+      type: "object",
+      properties: { message: { type: "string" } },
+      required: ["message"],
+    },
+  })
   @Throttle({
     default: {
       ttl: 60_000,
@@ -35,6 +57,16 @@ export class AuthController {
   }
 
   @Post("reset-password")
+  @ApiOperation({ summary: "Reset a password with a reset token" })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({
+    status: 201,
+    schema: {
+      type: "object",
+      properties: { message: { type: "string" } },
+      required: ["message"],
+    },
+  })
   @Throttle({
     default: {
       ttl: 60_000,
