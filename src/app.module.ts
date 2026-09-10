@@ -16,6 +16,7 @@ import { User } from "./entity/User";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { UsersModule } from "./users/users.module";
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   controllers: [AppController],
@@ -59,6 +60,7 @@ import { UsersModule } from "./users/users.module";
     ]),
     AuthModule,
     UsersModule,
+    CustomersModule,
   ],
 })
 export class AppModule {}
