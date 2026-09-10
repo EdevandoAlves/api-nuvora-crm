@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -48,15 +49,15 @@ export class AuthService {
     private readonly configService: ConfigService,
 
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
 
   async register(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const { email, password, firstName, lastName, companyName, cnpj } =
       createUserDto;
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const conflictMessage = "Unable to create account with these details"
-    const slugMessage = "Company name cannot generate a valid slug"
+    const conflictMessage = "Unable to create account with these details";
+    const slugMessage = "Company name cannot generate a valid slug";
 
     try {
       return await this.dataSource.transaction(async (manager) => {
@@ -65,28 +66,20 @@ export class AuthService {
 
         const userExists = await userRepo.findOneBy({ email });
         if (userExists) {
-          throw new ConflictException(
-            conflictMessage,
-          );
+          throw new ConflictException(conflictMessage);
         }
         const slug = generateSlug(companyName);
         if (!slug) {
-          throw new ConflictException(
-            slugMessage,
-          );
+          throw new ConflictException(slugMessage);
         }
         const orgExists = await orgRepo.findOne({
           where: [{ cnpj }, { slug }],
         });
         if (orgExists?.cnpj === cnpj) {
-          throw new ConflictException(
-            conflictMessage,
-          );
+          throw new ConflictException(conflictMessage);
         }
         if (orgExists?.slug === slug) {
-          throw new ConflictException(
-            conflictMessage,
-          );
+          throw new ConflictException(conflictMessage);
         }
         const org = orgRepo.create({ name: companyName, slug, cnpj });
         await orgRepo.save(org);
@@ -97,7 +90,7 @@ export class AuthService {
           firstName,
           lastName,
           organizationId: org.id,
-          role: UserRole.ADMIN,
+          role: UserRole.OWNER,
         });
 
         await userRepo.save(user);
@@ -120,9 +113,7 @@ export class AuthService {
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          conflictMessage
-        );
+        throw new ConflictException(conflictMessage);
       }
       throw error;
     }
@@ -131,7 +122,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<string> {
     const { email, password } = loginDto;
 
-    const invalidMessage = "Invalid credentials"
+    const invalidMessage = "Invalid credentials";
 
     const user = await this.userRepo.findOneBy({ email });
     if (!user || user.isActive !== true) {
@@ -165,6 +156,10 @@ export class AuthService {
     const token = jwt.sign(payload, secret, {
       expiresIn: "1d",
     });
+
+    user.lastLoginAt = new Date();
+    await this.userRepo.save(user);
+
     return token;
   }
 
@@ -174,7 +169,7 @@ export class AuthService {
     const { email } = forgotPasswordDto;
     const message =
       "If an account exists for this email, a reset link will be sent shortly.";
-    const failedMessage = "Failed to send recovery email"
+    const failedMessage = "Failed to send recovery email";
 
     const user = await this.userRepo.findOneBy({ email });
     if (!user) {
@@ -219,9 +214,8 @@ export class AuthService {
   ): Promise<{ message: string }> {
     const { token, password } = resetPasswordDto;
 
-    const successMessage = "Password reset successfully"
-    const message =
-      "Invalid or expired reset token";
+    const successMessage = "Password reset successfully";
+    const message = "Invalid or expired reset token";
 
     const queryToken = createHash("sha256").update(token).digest("hex");
 
@@ -230,7 +224,6 @@ export class AuthService {
     });
     if (!user || !user.expiresAt || user.expiresAt < new Date()) {
       throw new BadRequestException(message);
-      ;
     }
 
     if (!user.isActive) {

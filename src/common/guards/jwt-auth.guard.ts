@@ -8,6 +8,8 @@ import { ConfigService } from "@nestjs/config";
 import * as jwt from "jsonwebtoken";
 import { Observable } from "rxjs";
 import { FastifyRequest } from "fastify";
+import { Reflector } from "@nestjs/core";
+import { IS_PUBLIC_KEY } from "src/common/decorators/public.decorator";
 
 interface AuthPayload extends jwt.JwtPayload {
   id: string;
@@ -21,21 +23,33 @@ type AuthRequest = FastifyRequest & {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly reflector: Reflector,
+  ) { }
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<AuthRequest>();
     const auth = request.headers.authorization;
 
     if (!auth) {
-      return false;
+      throw new UnauthorizedException("Authentication required");
     }
 
     const [type, token] = auth.split(" ");
 
     if (type !== "Bearer" || !token) {
-      return false;
+      throw new UnauthorizedException("Invalid authoriztion header");
     }
 
     const secret = this.configService.getOrThrow<string>("SECRET_KEY");
