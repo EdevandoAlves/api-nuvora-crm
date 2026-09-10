@@ -3,11 +3,11 @@
 
 API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação e uma base preparada para evoluir regras de negócio por organização. Não é apresentada como um CRM SaaS completo.
 
-> **Status atual:** há cinco endpoints de autenticação/perfil registrados no código. Clientes, negociações, tarefas, interações e dashboard pertencem ao escopo planejado e **não possuem rotas disponíveis nesta versão**.
+> **Status atual:** há endpoints de autenticação e perfil registrados no código. Clientes, negociações, tarefas, interações e dashboard **não possuem rotas disponíveis nesta versão**.
 
 ## Propósito
 
-O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT e iniciar o fluxo de recuperação de senha. O escopo de produto completo está descrito em [`crm-api-scope.md`](crm-api-scope.md).
+O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT e iniciar o fluxo de recuperação de senha.
 
 ## Arquitetura e stack
 
@@ -20,7 +20,6 @@ O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de
 - hash de senha com **bcrypt**;
 - recuperação de senha por e-mail via `@nestjs-modules/mailer` e Nodemailer;
 - documentação interativa com Swagger;
-- testes com Jest e Supertest.
 
 A aplicação é organizada em módulos Nest. `AppModule` carrega configuração, conexão TypeORM, limitação global de requisições, autenticação e usuários. As entidades TypeORM modelam o domínio e as migrations mantêm o esquema do banco fora do ciclo de inicialização da aplicação (`synchronize: false`).
 
@@ -35,17 +34,9 @@ A aplicação é organizada em módulos Nest. `AppModule` carrega configuração
 - Redefinição de senha com invalidação do token após o uso.
 - Rota de perfil protegida por JWT registrada em `GET /users/me`.
 
-### Escopo planejado — ainda indisponível
+### Domínios ainda indisponíveis
 
-Conforme [`crm-api-scope.md`](crm-api-scope.md), a primeira versão planeja módulos de:
-
-- clientes (`/customers`);
-- negociações (`/deals`);
-- tarefas e follow-ups (`/tasks`);
-- interações (`/interactions`);
-- métricas de dashboard (`/dashboard`).
-
-As entidades desses domínios já existem no código, mas isso **não** significa que os endpoints planejados estejam implementados ou publicados.
+As entidades de clientes, negociações, tarefas, interações e dashboard já existem no código, mas isso **não** significa que seus endpoints estejam implementados ou publicados.
 
 ## Estrutura do projeto
 
@@ -66,9 +57,6 @@ src/
 ├── app.module.ts         # Composição de módulos e infraestrutura
 ├── data-source.ts        # Data source usado pelas migrations
 └── main.ts               # Bootstrap Fastify, validação e Swagger
-test/
-└── app.e2e-spec.ts       # Configuração/teste e2e atual
-crm-api-scope.md          # Escopo funcional e roadmap do produto
 ```
 
 ## Pré-requisitos
@@ -140,7 +128,7 @@ Outros comandos disponíveis:
 | `npm run start:debug` | Inicia com depuração e modo watch. |
 | `npm run build` | Compila TypeScript para `dist/`. |
 | `npm run start:prod` | Executa `dist/main`; requer build prévio. |
-| `npm run format` | Formata arquivos TypeScript de `src/` e `test/` com Prettier. |
+| `npm run format` | Formata arquivos TypeScript de `src/` com Prettier. |
 | `npm run lint` | Executa ESLint com correção automática. |
 
 ## Swagger
@@ -198,32 +186,8 @@ Embora `GET /users/me` esteja registrado e protegido por `JwtAuthGuard`, o servi
 - A autorização por organização e por papel prevista para os módulos CRM ainda não está implementada em rotas de clientes, negociações, tarefas, interações ou dashboard, pois essas rotas ainda não existem.
 - `GET /users/me` permanece incompleto, conforme a limitação descrita acima.
 - A compilação atual falha em `src/users/users.service.ts` porque `id` é referenciado sem definição. A aplicação precisa dessa correção antes de poder ser compilada e executada a partir do código-fonte.
-- A suíte unitária atual falha ao resolver imports que usam o alias `src/` no Jest; não há `moduleNameMapper` correspondente na configuração de Jest de `package.json`.
-- Os testes atuais são estruturais e não cobrem os fluxos completos de autenticação ou integração com banco/e-mail.
-
-## Testes
-
-```bash
-# suíte unitária
-npm run test
-
-# modo watch
-npm run test:watch
-
-# cobertura
-npm run test:cov
-
-# depuração em execução serial
-npm run test:debug
-
-# suíte e2e configurada em test/jest-e2e.json
-npm run test:e2e
-```
-
-No estado atual do repositório, `npm run test` não conclui devido à resolução dos aliases `src/` no Jest, e `npm run build` falha pela referência indefinida a `id` no serviço de usuários. Os comandos acima são os scripts existentes em `package.json`; as limitações estão registradas para evitar que sejam interpretados como validações bem-sucedidas.
-
 ## Roadmap
 
-O roadmap funcional é mantido em [`crm-api-scope.md`](crm-api-scope.md). A evolução planejada inclui 28 rotas em seis módulos: autenticação, clientes, negociações, tarefas, interações e dashboard. Os requisitos transversais previstos incluem isolamento por organização, autorização baseada em papel, DTOs validados, erros consistentes, Swagger, testes relevantes, migrations, seed e execução local com PostgreSQL.
+Evoluções futuras podem incluir módulos de clientes, negociações, tarefas, interações e dashboard, com isolamento por organização, autorização baseada em papel, DTOs validados, erros consistentes, Swagger, migrations, seed e execução local com PostgreSQL.
 
 Itens explicitamente fora do escopo inicial incluem integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial completo.
