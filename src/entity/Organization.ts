@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
   OneToMany,
+  JoinColumn,
   Unique,
 } from "typeorm";
 import { User } from "./User";
@@ -52,6 +54,10 @@ export class Organization {
 
   @Column({ type: "uuid", nullable: true })
   ownerId: string;
+
+  @ManyToOne(() => User, { onDelete: "SET NULL" })
+  @JoinColumn({ name: "ownerId" })
+  owner: User;
 
   @CreateDateColumn()
   createdAt: Date;

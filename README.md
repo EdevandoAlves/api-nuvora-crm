@@ -1,119 +1,98 @@
-# Nuvora CRM API
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-![Licença](https://img.shields.io/badge/license-MIT-blue.svg)
-![TypeScript](https://img.shields.io/badge/typescript-%233178C6.svg?style=flat&logo=typescript&logoColor=white)
-![Fastify](https://img.shields.io/badge/fastify-%23000000.svg?style=flat&logo=fastify&logoColor=white)
-![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-> API backend para um CRM SaaS multi-tenant, focado em isolamento de dados, controle de acesso baseado em função (RBAC) e arquitetura limpa.
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
----
+## Description
 
-### 🚧 **Projeto em Desenvolvimento Ativo** 🚧
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-Este é um projeto autoral, desenvolvido para simular desafios reais de um produto B2B e para fins de estudo e portfólio. O foco atual é a consolidação do RBAC, isolamento por organização e a implementação dos fluxos de negócio para cada entidade.
+## Project setup
 
----
+```bash
+$ npm install
+```
 
-## 📋 Tabela de Conteúdos
+## Compile and run the project
 
-1.  [Sobre o Projeto](#-sobre-o-projeto)
-    *   [Recursos Técnicos](#-recursos-técnicos)
-    *   [Stack de Tecnologia](#️-stack-de-tecnologia)
-2.  [🚀 Começando](#-começando)
-    *   [Pré-requisitos](#pré-requisitos)
-    *   [Instalação](#instalação)
-3.  [📜 Uso e Endpoints da API](#-uso-e-endpoints-da-api)
-4.  [🗃️ Esquema do Banco de Dados](#️-esquema-do-banco-de-dados)
-5.  [📄 Licença](#-licença)
+```bash
+# development
+$ npm run start
 
-## ✨ Sobre o Projeto
+# watch mode
+$ npm run start:dev
 
-NuvoraCRM é um backend de CRM poderoso, escalável e fácil de usar, projetado para gerenciar organizações, usuários, clientes, negócios e muito mais. Construído com uma pilha de tecnologia moderna, ele fornece uma base robusta para a construção de uma aplicação de CRM completa.
+# production mode
+$ npm run start:prod
+```
 
-### ⭐ Recursos Técnicos
+## Run tests
 
-*   **Multi-tenancy:** Isolamento total dos dados por organização em todas as queries.
-*   **RBAC (Role-Based Access Control):** Validação de permissões (ator vs. alvo) em operações sensíveis.
-*   **Fluxo de Convite:** Sistema de convite de usuários com token de ativação por e-mail.
-*   **Autenticação:** JWT (JSON Web Tokens) stateless para segurança e escalabilidade.
-*   **Arquitetura Limpa:** Separação clara de responsabilidades entre `Controller`, `Service` e `Repository`.
-*   **DTOs (Data Transfer Objects):** Objetos semânticos para cada caso de uso, garantindo clareza e segurança na transferência de dados.
+```bash
+# unit tests
+$ npm run test
 
-### 🛠️ Stack de Tecnologia
+# e2e tests
+$ npm run test:e2e
 
-*   **Backend:** [Fastify](https://www.fastify.io/)
-*   **ORM:** [TypeORM](https://typeorm.io/)
-*   **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/)
-*   **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-*   **Containerização:** [Docker](https://www.docker.com/)
+# test coverage
+$ npm run test:cov
+```
 
-## 🚀 Começando
+## Deployment
 
-Siga estas instruções para ter uma cópia do projeto rodando localmente para desenvolvimento e testes.
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
-### Pré-requisitos
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
-*   [Node.js](https://nodejs.org/) (v18 ou superior)
-*   [Docker](https://www.docker.com/) e [Docker Compose](https://docs.docker.com/compose/)
-*   [NPM](https://www.npmjs.com/)
+```bash
+$ npm install -g @nestjs/mau
+$ mau deploy
+```
 
-### Instalação
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone https://github.com/EdevandoAlves/api-nuvora-crm.git
-    cd api-nuvora-crm
-    ```
+## Resources
 
-2.  **Instale as dependências do projeto:**
-    ```bash
-    npm install
-    ```
+Check out a few resources that may come in handy when working with NestJS:
 
-3.  **Configure as variáveis de ambiente:**
-    Copie o arquivo de exemplo e preencha com suas informações.
-    ```bash
-    cp .env-example .env
-    ```
-    > **Nota:** As credenciais padrão no `.env-example` já estão configuradas para funcionar com o `docker-compose.yml`.
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
-4.  **Inicie o banco de dados com Docker:**
-    Este comando irá iniciar um container PostgreSQL em segundo plano.
-    ```bash
-    docker-compose up -d
-    ```
+## Support
 
-5.  **Execute as migrações do TypeORM:**
-    Este comando criará as tabelas no seu banco de dados.
-    ```bash
-    npm run migration:run
-    ```
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-6.  **Inicie o servidor de desenvolvimento:**
-    ```bash
-    npm run dev
-    ```
+## Stay in touch
 
-O servidor estará disponível em `http://localhost:8000` (ou na porta que você definir no seu arquivo `.env`).
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-## 📜 Uso e Endpoints da API
+## License
 
-A seguir, uma lista de alguns endpoints já implementados ou planejados.
-
-*   `POST /auth/register`: Registra uma nova organização e seu usuário proprietário.
-*   `POST /auth/login`: Realiza o login e retorna um token JWT.
-*   `GET /users`: Lista os usuários da organização.
-*   `POST /customers`: Cria um novo cliente.
-*   `GET /customers`: Lista os clientes da organização.
-*   ... e muito mais!
-
-> A documentação completa da API será adicionada futuramente (Swagger/OpenAPI).
-
-## 🗃️ Esquema do Banco de Dados
-
-O banco de dados foi projetado para ser escalável e eficiente, com relacionamentos claros entre as entidades principais: `Organization`, `User`, `Customer`, `Contact`, `Deal`, `Task`, `Product`, etc.
-
-## 📄 Licença
-
-Distribuído sob a Licença MIT. Veja `LICENSE.txt` para mais informações.
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

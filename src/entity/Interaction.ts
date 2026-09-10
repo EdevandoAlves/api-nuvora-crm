@@ -43,7 +43,9 @@ export class Interaction {
   @Column({ type: "uuid", nullable: true })
   contactId: string;
 
-  @ManyToOne(() => Contact, (contact) => contact.interactions, { nullable: true })
+  @ManyToOne(() => Contact, (contact) => contact.interactions, {
+    nullable: true,
+  })
   @JoinColumn({ name: "contactId" })
   contact: Contact;
 

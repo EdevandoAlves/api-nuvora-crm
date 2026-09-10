@@ -63,7 +63,13 @@ export class Customer {
   annualRevenue: number;
 
   @Column({ type: "jsonb", nullable: true })
-  address: { street: string; city: string; state: string; zipCode: string; country: string };
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
 
   @Column({
     type: "enum",
