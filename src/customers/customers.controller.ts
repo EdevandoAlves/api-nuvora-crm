@@ -14,6 +14,7 @@ import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import type { AuthRequest } from "src/common/guards/jwt-auth.guard";
+import { CustomerResponseDto } from "./dto/customer-response.dto";
 
 @Controller("customers")
 export class CustomersController {
@@ -24,7 +25,7 @@ export class CustomersController {
   create(
     @Body() createCustomerDto: CreateCustomerDto,
     @Req() request: AuthRequest,
-  ) {
+  ): Promise<CustomerResponseDto> {
     return this.customersService.create(createCustomerDto, {
       ownerId: request.user!.id,
       organizationId: request.user!.organization,
@@ -32,8 +33,12 @@ export class CustomersController {
   }
 
   @Get()
-  findAll() {
-    return this.customersService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(@Req() request: AuthRequest) {
+    return this.customersService.findAll({
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+    });
   }
 
   @Get(":id")

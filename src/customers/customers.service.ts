@@ -9,6 +9,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Customer } from "src/entity/Customer";
 import { QueryFailedError, Repository } from "typeorm";
 import { CustomerResponseDto } from "./dto/customer-response.dto";
+import { isUUID } from "class-validator";
 
 function isUniqueViolation(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) {
@@ -39,7 +40,7 @@ export class CustomersService {
   async create(
     createCustomerDto: CreateCustomerDto,
     { ownerId, organizationId }: CustomerContext,
-  ) {
+  ): Promise<CustomerResponseDto> {
     const messageMissingToken =
       "Missing required data in token or request body";
     const conflictMessage =
@@ -90,8 +91,18 @@ export class CustomersService {
     }
   }
 
-  findAll() {
-    return `This action returns all customers`;
+  async findAll({ organizationId }: CustomerContext) {
+    const messageMissingToken =
+      "Missing required data in token or request body";
+
+    if (!organizationId || !isUUID(organizationId, "4")) {
+      throw new UnauthorizedException(messageMissingToken);
+    }
+
+    const customers = await this.customerRepo.find({
+      where: { organizationId },
+    });
+    return customers;
   }
 
   findOne(id: number) {
