@@ -11,13 +11,13 @@ import { FastifyRequest } from "fastify";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "src/common/decorators/public.decorator";
 
-interface AuthPayload extends jwt.JwtPayload {
+export interface AuthPayload extends jwt.JwtPayload {
   id: string;
   role: string;
   organization: string;
 }
 
-type AuthRequest = FastifyRequest & {
+export type AuthRequest = FastifyRequest & {
   user?: AuthPayload;
 };
 

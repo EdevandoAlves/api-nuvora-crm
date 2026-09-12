@@ -1,98 +1,193 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<!-- generated-by: gsd-doc-writer -->
+# API CRM Nuvora
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação e uma base preparada para evoluir regras de negócio por organização. Não é apresentada como um CRM SaaS completo.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> **Status atual:** há endpoints de autenticação e perfil registrados no código. Clientes, negociações, tarefas, interações e dashboard **não possuem rotas disponíveis nesta versão**.
 
-## Description
+## Propósito
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT e iniciar o fluxo de recuperação de senha.
 
-## Project setup
+## Arquitetura e stack
 
-```bash
-$ npm install
+- **Node.js + TypeScript** com **NestJS 11**;
+- adaptador HTTP **Fastify**;
+- **PostgreSQL** com **TypeORM** e migrations versionadas;
+- configuração por ambiente com `@nestjs/config` e `dotenv`;
+- validação global de DTOs com `class-validator` e `class-transformer`;
+- autenticação por **JWT** assinado com `jsonwebtoken`;
+- hash de senha com **bcrypt**;
+- recuperação de senha por e-mail via `@nestjs-modules/mailer` e Nodemailer;
+- documentação interativa com Swagger;
+
+A aplicação é organizada em módulos Nest. `AppModule` carrega configuração, conexão TypeORM, limitação global de requisições, autenticação e usuários. As entidades TypeORM modelam o domínio e as migrations mantêm o esquema do banco fora do ciclo de inicialização da aplicação (`synchronize: false`).
+
+## Funcionalidades atuais
+
+### Implementado agora: autenticação e perfil
+
+- Cadastro de organização e primeiro usuário, criado com o papel `OWNER`.
+- Validação dos dados de entrada, normalização do e-mail no cadastro e prevenção de duplicidade por e-mail, CNPJ ou slug da organização.
+- Login com JWT de validade de um dia; usuários e organizações inativos não autenticam.
+- Solicitação de recuperação de senha com resposta genérica e token aleatório armazenado como hash, válido por uma hora.
+- Redefinição de senha com invalidação do token após o uso.
+- Rota de perfil protegida por JWT registrada em `GET /users/me`.
+
+### Domínios ainda indisponíveis
+
+As entidades de clientes, negociações, tarefas, interações e dashboard já existem no código, mas isso **não** significa que seus endpoints estejam implementados ou publicados.
+
+## Estrutura do projeto
+
+```text
+src/
+├── auth/                 # Cadastro, login e recuperação de senha
+│   ├── dto/              # Contratos e validações de entrada/saída
+│   ├── auth.controller.ts
+│   ├── auth.module.ts
+│   └── auth.service.ts
+├── common/
+│   ├── decorators/       # Decorador para rotas públicas
+│   ├── guards/           # Guarda JWT e ponto de extensão para papéis
+│   └── utils/            # Geração de slug
+├── entity/               # Entidades TypeORM do domínio CRM
+├── migration/            # Migrations TypeORM
+├── users/                # Endpoint de perfil
+├── app.module.ts         # Composição de módulos e infraestrutura
+├── data-source.ts        # Data source usado pelas migrations
+└── main.ts               # Bootstrap Fastify, validação e Swagger
 ```
 
-## Compile and run the project
+## Pré-requisitos
+
+- Node.js e npm (o repositório não fixa uma versão de Node em `package.json`);
+- uma instância acessível de PostgreSQL;
+- credenciais SMTP válidas para inicializar o módulo de e-mail, inclusive quando a recuperação de senha não for usada no momento.
+
+## Configuração de ambiente
+
+1. Crie seu arquivo local a partir do modelo:
+
+   ```bash
+   cp .env-example .env
+   ```
+
+2. Preencha as variáveis abaixo com valores locais. Não versione o arquivo `.env`.
+
+| Variável | Uso |
+| --- | --- |
+| `PORT` | Porta HTTP da API; se ausente, a aplicação usa `3000`. |
+| `TYPEORM_CONNECTION` | Indicador de conexão presente no arquivo de exemplo; a conexão da aplicação é configurada como PostgreSQL no código. |
+| `TYPEORM_HOST` | Host do PostgreSQL. |
+| `TYPEORM_PORT` | Porta do PostgreSQL; se ausente, o código usa `5432`. |
+| `TYPEORM_USERNAME` | Usuário do banco. |
+| `TYPEORM_PASSWORD` | Senha do banco. |
+| `TYPEORM_DATABASE` | Nome do banco. |
+| `SECRET_KEY` | Chave obrigatória para assinar e validar JWTs. |
+| `FRONTEND_URI` | Base usada para montar o link de redefinição de senha. |
+| `SMTP_HOST` | Host do servidor SMTP. |
+| `SMTP_PORT` | Porta do servidor SMTP. |
+| `SMTP_USER` | Usuário de autenticação SMTP. |
+| `SMTP_PASS` | Senha de autenticação SMTP. |
+| `NODE_ENV` | Quando definido como `production`, desabilita a interface Swagger. |
+
+`SECRET_KEY`, `FRONTEND_URI` e as quatro variáveis SMTP são lidas com `ConfigService.getOrThrow()` nos fluxos correspondentes. Os valores de `TYPEORM_HOST`, `TYPEORM_USERNAME` e `TYPEORM_DATABASE` também são necessários para uma conexão PostgreSQL funcional. O arquivo `.env-example` contém apenas parte dessas chaves; complete o `.env` local sem incluir valores reais nesta documentação.
+
+## Instalação, migrations e execução
+
+Instale as dependências:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+Com o PostgreSQL configurado e as variáveis de ambiente preenchidas, aplique as migrations:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run migration:run
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Para desfazer a última migration aplicada:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run migration:revert
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Inicie a API em modo de desenvolvimento com recarregamento:
 
-## Resources
+```bash
+npm run start:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Outros comandos disponíveis:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Comando | Finalidade |
+| --- | --- |
+| `npm run start` | Inicia a aplicação Nest sem modo watch. |
+| `npm run start:debug` | Inicia com depuração e modo watch. |
+| `npm run build` | Compila TypeScript para `dist/`. |
+| `npm run start:prod` | Executa `dist/main`; requer build prévio. |
+| `npm run format` | Formata arquivos TypeScript de `src/` com Prettier. |
+| `npm run lint` | Executa ESLint com correção automática. |
 
-## Support
+## Swagger
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Com a API em execução e `NODE_ENV` diferente de `production`, a documentação Swagger fica em:
 
-## Stay in touch
+```text
+http://localhost:<PORT>/api
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Por exemplo, com a porta padrão: `http://localhost:3000/api`.
 
-## License
+A rota `/api` é configurada apenas fora de produção; ela não é exposta quando `NODE_ENV=production`.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Endpoints registrados atualmente
+
+| Método | Rota | Autenticação | Descrição |
+| --- | --- | --- | --- |
+| `POST` | `/auth/register` | Não | Cria uma organização e o primeiro usuário proprietário. |
+| `POST` | `/auth/login` | Não | Valida credenciais e retorna um JWT como string. |
+| `POST` | `/auth/forgot-password` | Não | Solicita recuperação de senha; limitado a 3 requisições por 60 segundos. |
+| `POST` | `/auth/reset-password` | Não | Redefine a senha usando um token válido; limitado a 5 requisições por 60 segundos. |
+| `GET` | `/users/me` | Bearer JWT | Rota de perfil protegida, registrada no controlador. Veja a limitação conhecida abaixo. |
+
+Também há `GET /ping`, que retorna `Pong` e serve como verificação simples de disponibilidade local.
+
+Para chamar a rota protegida, envie o token retornado por `/auth/login` no cabeçalho:
+
+```http
+Authorization: Bearer <token>
+```
+
+### Limitação conhecida do perfil
+
+Embora `GET /users/me` esteja registrado e protegido por `JwtAuthGuard`, o serviço atual referencia uma variável `id` que não foi definida. Assim, a rota não retorna um perfil utilizável no estado atual. Ela deve ser concluída antes de ser consumida como endpoint de perfil funcional.
+
+## Segurança: práticas presentes e limitações atuais
+
+### Práticas presentes
+
+- Senhas são armazenadas com bcrypt (`12` rounds no cadastro e `10` na redefinição).
+- O cadastro valida formato e tamanho de e-mail, senha, nomes, empresa e CNPJ; a senha exige pelo menos oito caracteres.
+- O `ValidationPipe` global transforma entradas, remove campos não permitidos e rejeita campos desconhecidos.
+- O login devolve a mesma mensagem para credenciais inválidas, usuário inativo e organização inativa.
+- Tokens de recuperação são gerados com `crypto.randomBytes`, persistidos como hash SHA-256 e expirados após uma hora; são anulados depois do uso.
+- A guarda JWT exige o esquema `Authorization: Bearer <token>` e verifica a assinatura com `SECRET_KEY`.
+- Há limitação global de 60 requisições por 60 segundos, além de limites mais restritos nas rotas de recuperação de senha.
+- `.env` está ignorado pelo Git.
+
+### Limitações e TODOs verificados
+
+- A implementação usa `SECRET_KEY`, enquanto o arquivo `.env-example` fornece `JWT_SECRET`; o ambiente local precisa definir `SECRET_KEY` para login e rotas protegidas funcionarem.
+- O módulo SMTP exige `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` e `SMTP_PASS`, mas elas não constam no arquivo de exemplo.
+- O link de recuperação depende de `FRONTEND_URI`, que também não consta no arquivo de exemplo.
+- A autorização por organização e por papel prevista para os módulos CRM ainda não está implementada em rotas de clientes, negociações, tarefas, interações ou dashboard, pois essas rotas ainda não existem.
+- `GET /users/me` permanece incompleto, conforme a limitação descrita acima.
+- A compilação atual falha em `src/users/users.service.ts` porque `id` é referenciado sem definição. A aplicação precisa dessa correção antes de poder ser compilada e executada a partir do código-fonte.
+## Roadmap
+
+Evoluções futuras podem incluir módulos de clientes, negociações, tarefas, interações e dashboard, com isolamento por organização, autorização baseada em papel, DTOs validados, erros consistentes, Swagger, migrations, seed e execução local com PostgreSQL.
+
+Itens explicitamente fora do escopo inicial incluem integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial completo.
