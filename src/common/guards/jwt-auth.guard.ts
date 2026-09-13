@@ -10,10 +10,11 @@ import { Observable } from "rxjs";
 import { FastifyRequest } from "fastify";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "src/common/decorators/public.decorator";
+import { UserRole } from "src/entity/User";
 
 export interface AuthPayload extends jwt.JwtPayload {
   id: string;
-  role: string;
+  role: UserRole;
   organization: string;
 }
 
@@ -26,7 +27,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly configService: ConfigService,
     private readonly reflector: Reflector,
-  ) { }
+  ) {}
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

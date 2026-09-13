@@ -11,6 +11,7 @@ import { Customer } from "src/entity/Customer";
 import { QueryFailedError, Repository } from "typeorm";
 import { CustomerResponseDto } from "./dto/customer-response.dto";
 import { isUUID } from "class-validator";
+import { UserRole } from "src/entity/User";
 
 function isUniqueViolation(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) {
@@ -29,14 +30,17 @@ function isUniqueViolation(error: unknown): boolean {
 type CustomerContext = {
   organizationId: string;
   ownerId: string;
+  role: UserRole;
 };
+
+const rolesWithFullAcess = [UserRole.ADMIN, UserRole.MANAGER];
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
-  ) { }
+  ) {}
 
   private toResponseDto(customer: Customer): CustomerResponseDto {
     return {
@@ -117,7 +121,7 @@ export class CustomersService {
 
   async findOne(
     id: string,
-    { ownerId, organizationId }: CustomerContext,
+    { ownerId, organizationId, role }: CustomerContext,
   ): Promise<CustomerResponseDto> {
     const message = "Customer not found";
     const messageMissingToken =
@@ -127,8 +131,12 @@ export class CustomersService {
       throw new UnauthorizedException(messageMissingToken);
     }
 
+    const where = rolesWithFullAcess.includes(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
     const customer = await this.customerRepo.findOne({
-      where: { id, organizationId },
+      where,
     });
 
     if (!customer) {
@@ -142,7 +150,24 @@ export class CustomersService {
     return `This action updates a #${id} customer`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} customer`;
+  async remove(
+    id: string,
+    { ownerId, organizationId, role }: CustomerContext,
+  ): Promise<void> {
+    const message = "Customer not found";
+
+    const where = rolesWithFullAcess.includes(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const customer = await this.customerRepo.findOne({
+      where,
+    });
+
+    if (!customer) {
+      throw new NotFoundException(message);
+    }
+
+    await this.customerRepo.softRemove(customer);
   }
 }

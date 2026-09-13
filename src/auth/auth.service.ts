@@ -49,7 +49,7 @@ export class AuthService {
     private readonly configService: ConfigService,
 
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
 
   async register(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const { email, password, firstName, lastName, companyName, cnpj } =
