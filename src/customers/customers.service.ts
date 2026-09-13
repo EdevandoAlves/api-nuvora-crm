@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
@@ -37,6 +38,25 @@ export class CustomersService {
     private readonly customerRepo: Repository<Customer>,
   ) { }
 
+  private toResponseDto(customer: Customer): CustomerResponseDto {
+    return {
+      id: customer.id,
+      organizationId: customer.organizationId,
+      ownerId: customer.ownerId,
+      companyName: customer.companyName,
+      cnpj: customer.cnpj,
+      industry: customer.industry,
+      website: customer.website,
+      employeeCount: customer.employeeCount,
+      annualRevenue: customer.annualRevenue,
+      address: customer.address,
+      status: customer.status,
+      source: customer.source,
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt,
+    };
+  }
+
   async create(
     createCustomerDto: CreateCustomerDto,
     { ownerId, organizationId }: CustomerContext,
@@ -70,19 +90,7 @@ export class CustomersService {
 
       await this.customerRepo.save(customer);
 
-      const customerResponse = new CustomerResponseDto();
-      customerResponse.organizationId = customer.organizationId;
-      customerResponse.ownerId = customer.ownerId;
-      customerResponse.companyName = customer.companyName;
-      customerResponse.cnpj = customer.cnpj;
-      customerResponse.industry = customer.industry;
-      customerResponse.website = customer.website;
-      customerResponse.employeeCount = customer.employeeCount;
-      customerResponse.annualRevenue = customer.annualRevenue;
-      customerResponse.address = customer.address;
-      customerResponse.source = customer.source;
-
-      return customerResponse;
+      return this.toResponseDto(customer);
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(conflictMessage);
@@ -91,7 +99,9 @@ export class CustomersService {
     }
   }
 
-  async findAll({ organizationId }: CustomerContext) {
+  async findAll({
+    organizationId,
+  }: CustomerContext): Promise<CustomerResponseDto[]> {
     const messageMissingToken =
       "Missing required data in token or request body";
 
@@ -102,11 +112,30 @@ export class CustomersService {
     const customers = await this.customerRepo.find({
       where: { organizationId },
     });
-    return customers;
+    return customers.map((customer) => this.toResponseDto(customer));
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} customer`;
+  async findOne(
+    id: string,
+    { ownerId, organizationId }: CustomerContext,
+  ): Promise<CustomerResponseDto> {
+    const message = "Customer not found";
+    const messageMissingToken =
+      "Missing required data in token or request body";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(messageMissingToken);
+    }
+
+    const customer = await this.customerRepo.findOne({
+      where: { id, organizationId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(message);
+    }
+
+    return this.toResponseDto(customer);
   }
 
   update(id: number, updateCustomerDto: UpdateCustomerDto) {

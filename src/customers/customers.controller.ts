@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
   UseGuards,
   Req,
 } from "@nestjs/common";
@@ -42,8 +43,15 @@ export class CustomersController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.customersService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  findOne(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() request: AuthRequest,
+  ) {
+    return this.customersService.findOne(id, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+    });
   }
 
   @Patch(":id")
