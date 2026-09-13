@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
   UseGuards,
   Req,
 } from "@nestjs/common";
@@ -18,7 +19,7 @@ import { CustomerResponseDto } from "./dto/customer-response.dto";
 
 @Controller("customers")
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) { }
+  constructor(private readonly customersService: CustomersService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -29,6 +30,7 @@ export class CustomersController {
     return this.customersService.create(createCustomerDto, {
       ownerId: request.user!.id,
       organizationId: request.user!.organization,
+      role: request.user!.role,
     });
   }
 
@@ -38,12 +40,21 @@ export class CustomersController {
     return this.customersService.findAll({
       ownerId: request.user!.id,
       organizationId: request.user!.organization,
+      role: request.user!.role,
     });
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.customersService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  findOne(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() request: AuthRequest,
+  ) {
+    return this.customersService.findOne(id, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 
   @Patch(":id")
@@ -55,7 +66,14 @@ export class CustomersController {
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.customersService.remove(+id);
+  remove(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() request: AuthRequest,
+  ) {
+    return this.customersService.remove(id, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 }
