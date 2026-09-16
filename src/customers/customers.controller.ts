@@ -59,10 +59,15 @@ export class CustomersController {
 
   @Patch(":id")
   update(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
+    @Req() request: AuthRequest,
   ) {
-    return this.customersService.update(+id, updateCustomerDto);
+    return this.customersService.update(id, updateCustomerDto, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 
   @Delete(":id")

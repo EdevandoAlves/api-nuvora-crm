@@ -8,7 +8,7 @@ import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Customer } from "src/entity/Customer";
-import { QueryFailedError, Repository } from "typeorm";
+import { Not, QueryFailedError, Repository } from "typeorm";
 import { CustomerResponseDto } from "./dto/customer-response.dto";
 import { isUUID } from "class-validator";
 import { UserRole } from "src/entity/User";
@@ -146,8 +146,71 @@ export class CustomersService {
     return this.toResponseDto(customer);
   }
 
-  update(id: number, updateCustomerDto: UpdateCustomerDto) {
-    return `This action updates a #${id} customer`;
+  async update(
+    id: string,
+    updateCustomerDto: UpdateCustomerDto,
+    { ownerId, organizationId, role }: CustomerContext,
+  ): Promise<CustomerResponseDto> {
+    const message = "Customer not found";
+    const conflictMessage =
+      "A customer with this CNPJ already exists in this organization";
+
+    const where = rolesWithFullAcess.includes(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const customer = await this.customerRepo.findOne({
+      where,
+    });
+
+    if (!customer) {
+      throw new NotFoundException(message);
+    }
+
+    if (updateCustomerDto.companyName !== undefined) {
+      customer.companyName = updateCustomerDto.companyName;
+    }
+    if (updateCustomerDto.cnpj !== undefined) {
+      const cnpjExisting = await this.customerRepo.findOne({
+        where: { cnpj: updateCustomerDto.cnpj, organizationId, id: Not(id) },
+      });
+      if (cnpjExisting) {
+        throw new ConflictException(conflictMessage);
+      }
+      customer.cnpj = updateCustomerDto.cnpj;
+    }
+    if (updateCustomerDto.industry !== undefined) {
+      customer.industry = updateCustomerDto.industry;
+    }
+    if (updateCustomerDto.website !== undefined) {
+      customer.website = updateCustomerDto.website;
+    }
+    if (updateCustomerDto.employeeCount !== undefined) {
+      customer.employeeCount = updateCustomerDto.employeeCount;
+    }
+    if (updateCustomerDto.annualRevenue !== undefined) {
+      customer.annualRevenue = updateCustomerDto.annualRevenue;
+    }
+    if (updateCustomerDto.address !== undefined) {
+      customer.address = updateCustomerDto.address as Customer["address"];
+    }
+    if (updateCustomerDto.source !== undefined) {
+      customer.source = updateCustomerDto.source;
+    }
+    if (updateCustomerDto.status !== undefined) {
+      customer.status = updateCustomerDto.status;
+    }
+
+    try {
+      await this.customerRepo.save(customer);
+
+      return this.toResponseDto(customer);
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException(conflictMessage);
+      }
+      throw error;
+    }
   }
 
   async remove(
