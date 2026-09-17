@@ -11,4 +11,4 @@ import { Customer } from "src/entity/Customer";
   controllers: [CustomersController],
   providers: [CustomersService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
-export class CustomersModule {}
+export class CustomersModule { }

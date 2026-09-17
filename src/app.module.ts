@@ -17,6 +17,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
+import { DealsModule } from './deals/deals.module';
 
 @Module({
   controllers: [AppController],
@@ -61,6 +62,7 @@ import { CustomersModule } from "./customers/customers.module";
     AuthModule,
     UsersModule,
     CustomersModule,
+    DealsModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

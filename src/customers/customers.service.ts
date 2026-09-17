@@ -8,39 +8,21 @@ import { CreateCustomerDto } from "./dto/create-customer.dto";
 import { UpdateCustomerDto } from "./dto/update-customer.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Customer } from "src/entity/Customer";
-import { Not, QueryFailedError, Repository } from "typeorm";
+import { Not, Repository } from "typeorm";
 import { CustomerResponseDto } from "./dto/customer-response.dto";
 import { isUUID } from "class-validator";
-import { UserRole } from "src/entity/User";
-
-function isUniqueViolation(error: unknown): boolean {
-  if (!(error instanceof QueryFailedError)) {
-    return false;
-  }
-
-  const driverError: unknown = error.driverError;
-  return (
-    typeof driverError === "object" &&
-    driverError !== null &&
-    "code" in driverError &&
-    driverError.code === "23505"
-  );
-}
-
-type CustomerContext = {
-  organizationId: string;
-  ownerId: string;
-  role: UserRole;
-};
-
-const rolesWithFullAcess = [UserRole.ADMIN, UserRole.MANAGER];
+import { isUniqueViolation } from "src/common/utils/typeorm-errors";
+import {
+  ROLES_WITH_FULL_ACCESS,
+  TenantContext,
+} from "src/common/utils/tenant-context";
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
-  ) {}
+  ) { }
 
   private toResponseDto(customer: Customer): CustomerResponseDto {
     return {
@@ -63,7 +45,7 @@ export class CustomersService {
 
   async create(
     createCustomerDto: CreateCustomerDto,
-    { ownerId, organizationId }: CustomerContext,
+    { ownerId, organizationId }: TenantContext,
   ): Promise<CustomerResponseDto> {
     const messageMissingToken =
       "Missing required data in token or request body";
@@ -105,7 +87,7 @@ export class CustomersService {
 
   async findAll({
     organizationId,
-  }: CustomerContext): Promise<CustomerResponseDto[]> {
+  }: TenantContext): Promise<CustomerResponseDto[]> {
     const messageMissingToken =
       "Missing required data in token or request body";
 
@@ -121,7 +103,7 @@ export class CustomersService {
 
   async findOne(
     id: string,
-    { ownerId, organizationId, role }: CustomerContext,
+    { ownerId, organizationId, role }: TenantContext,
   ): Promise<CustomerResponseDto> {
     const message = "Customer not found";
     const messageMissingToken =
@@ -131,7 +113,7 @@ export class CustomersService {
       throw new UnauthorizedException(messageMissingToken);
     }
 
-    const where = rolesWithFullAcess.includes(role)
+    const where = ROLES_WITH_FULL_ACCESS.includes(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -149,13 +131,13 @@ export class CustomersService {
   async update(
     id: string,
     updateCustomerDto: UpdateCustomerDto,
-    { ownerId, organizationId, role }: CustomerContext,
+    { ownerId, organizationId, role }: TenantContext,
   ): Promise<CustomerResponseDto> {
     const message = "Customer not found";
     const conflictMessage =
       "A customer with this CNPJ already exists in this organization";
 
-    const where = rolesWithFullAcess.includes(role)
+    const where = ROLES_WITH_FULL_ACCESS.includes(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -215,11 +197,11 @@ export class CustomersService {
 
   async remove(
     id: string,
-    { ownerId, organizationId, role }: CustomerContext,
+    { ownerId, organizationId, role }: TenantContext,
   ): Promise<void> {
     const message = "Customer not found";
 
-    const where = rolesWithFullAcess.includes(role)
+    const where = ROLES_WITH_FULL_ACCESS.includes(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
