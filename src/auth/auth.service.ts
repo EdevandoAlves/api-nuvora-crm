@@ -106,7 +106,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<string> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
     const { email, password } = loginDto;
 
     const invalidMessage = "Invalid credentials";
@@ -147,7 +147,7 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await this.userRepo.save(user);
 
-    return token;
+    return { accessToken: token };
   }
 
   async forgotPassword(

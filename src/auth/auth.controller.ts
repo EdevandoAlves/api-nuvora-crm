@@ -32,7 +32,7 @@ export class AuthController {
     description: "JWT access token",
     schema: { type: "string" },
   })
-  login(@Body() loginDto: LoginDto): Promise<string> {
+  login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
     return this.authService.login(loginDto);
   }
 
