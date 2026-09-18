@@ -10,4 +10,4 @@ import { Deal } from "src/entity/Deal";
   controllers: [DealsController],
   providers: [DealsService],
 })
-export class DealsModule { }
+export class DealsModule {}

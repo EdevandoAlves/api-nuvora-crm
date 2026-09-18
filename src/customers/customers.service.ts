@@ -22,7 +22,7 @@ export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
-  ) { }
+  ) {}
 
   private toResponseDto(customer: Customer): CustomerResponseDto {
     return {
@@ -98,6 +98,11 @@ export class CustomersService {
     const customers = await this.customerRepo.find({
       where: { organizationId },
     });
+
+    if (customers.length === 0) {
+      return [];
+    }
+
     return customers.map((customer) => this.toResponseDto(customer));
   }
 
