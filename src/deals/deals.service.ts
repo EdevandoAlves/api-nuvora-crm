@@ -8,9 +8,17 @@ import { CreateDealDto } from "./dto/create-deal.dto";
 import { UpdateDealDto } from "./dto/update-deal.dto";
 import { TenantContext } from "src/common/utils/tenant-context";
 import { Customer } from "src/entity/Customer";
-import { Repository } from "typeorm";
+import {
+  Between,
+  FindOptionsWhere,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from "typeorm";
 import { Deal, DealStage } from "src/entity/Deal";
 import { DealResponseDto } from "./dto/deal-response.dto";
+import { PaginatedDealResponseDTO } from "./dto/paginated-deal-response.dto";
+import { QueryDealDTO } from "./dto/query-deal-dto";
 
 @Injectable()
 export class DealsService {
@@ -81,8 +89,60 @@ export class DealsService {
     return this.toResponseDto(deal);
   }
 
-  findAll() {
-    return `This action returns all deals`;
+  async findAll(
+    { ownerId, organizationId }: TenantContext,
+    query: QueryDealDTO,
+  ): Promise<PaginatedDealResponseDTO> {
+    const invalidMessage = "Invalid credentials";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(invalidMessage);
+    }
+
+    const where: FindOptionsWhere<Deal> = { organizationId };
+
+    if (query.stage) {
+      where.stage = query.stage;
+    }
+    if (query.customerId) {
+      where.customerId = query.customerId;
+    }
+    if (query.ownerId) {
+      where.ownerId = query.ownerId;
+    }
+    if (query.startDate && query.endDate) {
+      where.createdAt = Between(
+        new Date(query.startDate),
+        new Date(query.endDate),
+      );
+    } else if (query.startDate) {
+      where.createdAt = MoreThanOrEqual(new Date(query.startDate));
+    } else if (query.endDate) {
+      where.createdAt = LessThanOrEqual(new Date(query.endDate));
+    }
+
+    const sortBy = query.sortBy ?? "createdAt";
+    const sortOrder = query.sortOrder ?? "DESC";
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const [deals, total] = await this.dealRepo.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { [sortBy]: sortOrder },
+    });
+
+    return {
+      data: deals.map((deal) => this.toResponseDto(deal)),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   findOne(id: number) {
@@ -90,6 +150,7 @@ export class DealsService {
   }
 
   update(id: number, updateDealDto: UpdateDealDto) {
+    void updateDealDto;
     return `This action updates a #${id} deal`;
   }
 
