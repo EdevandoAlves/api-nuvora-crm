@@ -2,5 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class UsersService {
-  getMe(request) {}
+  getMe(request) {
+    void request;
+  }
 }

@@ -15,12 +15,18 @@ import { Task } from "./entity/Task";
 import { User } from "./entity/User";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
+import { DealsModule } from "./deals/deals.module";
 
 @Module({
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
@@ -61,6 +67,7 @@ import { CustomersModule } from "./customers/customers.module";
     AuthModule,
     UsersModule,
     CustomersModule,
+    DealsModule,
   ],
 })
 export class AppModule {}

@@ -7,9 +7,10 @@ import {
 import { CreateUserDto } from "./dto/create-user.dto";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { User, UserRole } from "src/entity/User";
-import { DataSource, QueryFailedError, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { Organization } from "src/entity/Organization";
 import { generateSlug } from "src/common/utils/generate-slug";
+import { isUniqueViolation } from "src/common/utils/typeorm-errors";
 import { LoginDto } from "./dto/login.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
 import * as bcrypt from "bcrypt";
@@ -19,20 +20,6 @@ import { ConfigService } from "@nestjs/config";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { MailerService } from "@nestjs-modules/mailer";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
-
-function isUniqueViolation(error: unknown): boolean {
-  if (!(error instanceof QueryFailedError)) {
-    return false;
-  }
-
-  const driverError: unknown = error.driverError;
-  return (
-    typeof driverError === "object" &&
-    driverError !== null &&
-    "code" in driverError &&
-    driverError.code === "23505"
-  );
-}
 
 @Injectable()
 export class AuthService {
@@ -119,7 +106,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<string> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
     const { email, password } = loginDto;
 
     const invalidMessage = "Invalid credentials";
@@ -160,7 +147,7 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await this.userRepo.save(user);
 
-    return token;
+    return { accessToken: token };
   }
 
   async forgotPassword(
