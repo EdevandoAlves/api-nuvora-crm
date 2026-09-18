@@ -1,0 +1,8 @@
+{
+  "email": "novo-usuario@example.com",
+  "password": "COLE_SUA_SENHA_AQUI",
+  "firstName": "Nome",
+  "lastName": "Sobrenome",
+  "companyName": "Empresa de Teste LTDA",
+  "cnpj": "12345678000195"
+}

@@ -141,6 +141,7 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
+http/payloads/secrets*
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 # Local project scope notes
