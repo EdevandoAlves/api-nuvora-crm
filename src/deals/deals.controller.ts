@@ -8,6 +8,7 @@ import {
   Delete,
   Req,
   Query,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -28,7 +29,7 @@ import { PaginatedDealResponseDTO } from "./dto/paginated-deal-response.dto";
 @ApiBearerAuth()
 @Controller("deals")
 export class DealsController {
-  constructor(private readonly dealsService: DealsService) {}
+  constructor(private readonly dealsService: DealsService) { }
 
   @Post()
   @ApiOperation({ summary: "Create a deal for an existing customer" })
@@ -66,8 +67,15 @@ export class DealsController {
   @Get(":id")
   @ApiOperation({ summary: "Get a deal by id" })
   @ApiParam({ name: "id", format: "uuid" })
-  findOne(@Param("id") id: string) {
-    return this.dealsService.findOne(+id);
+  findOne(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() request: AuthRequest,
+  ): Promise<DealResponseDto> {
+    return this.dealsService.findOne(id, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 
   @Patch(":id")

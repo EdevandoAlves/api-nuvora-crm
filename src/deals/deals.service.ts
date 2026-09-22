@@ -28,7 +28,7 @@ export class DealsService {
 
     @InjectRepository(Deal)
     private readonly dealRepo: Repository<Deal>,
-  ) {}
+  ) { }
 
   private toResponseDto(deal: Deal): DealResponseDto {
     return {
@@ -145,8 +145,24 @@ export class DealsService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} deal`;
+  async findOne(
+    id: string,
+    { ownerId, organizationId }: TenantContext,
+  ): Promise<DealResponseDto> {
+    const invalidMessage = "Invalid credentials";
+    const message = "Deal not found";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(invalidMessage);
+    }
+
+    const deal = await this.dealRepo.findOne({ where: { id, organizationId } });
+
+    if (!deal) {
+      throw new NotFoundException(message);
+    }
+
+    return this.toResponseDto(deal);
   }
 
   update(id: number, updateDealDto: UpdateDealDto) {
