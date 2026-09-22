@@ -1,13 +1,12 @@
-<!-- generated-by: gsd-doc-writer -->
 # API CRM Nuvora
 
-API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação e uma base preparada para evoluir regras de negócio por organização. Não é apresentada como um CRM SaaS completo.
+API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação, isolamento por organização e uma base preparada para evoluir regras de negócio. Não é apresentada como um CRM SaaS completo.
 
-> **Status atual:** há endpoints de autenticação e perfil registrados no código. Clientes, negociações, tarefas, interações e dashboard **não possuem rotas disponíveis nesta versão**.
+> **Status atual:** a API expõe rotas de autenticação, perfil, clientes e negociações. Tarefas, interações e dashboard permanecem apenas como entidades/modelos no banco, sem rotas publicadas.
 
 ## Propósito
 
-O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT e iniciar o fluxo de recuperação de senha.
+O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT, gerenciar clientes e acompanhar o ciclo de vida de negociações dentro de cada organização.
 
 ## Arquitetura e stack
 
@@ -16,47 +15,74 @@ O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de
 - **PostgreSQL** com **TypeORM** e migrations versionadas;
 - configuração por ambiente com `@nestjs/config` e `dotenv`;
 - validação global de DTOs com `class-validator` e `class-transformer`;
-- autenticação por **JWT** assinado com `jsonwebtoken`;
+- autenticação por **JWT** assinado com `jsonwebtoken`, registrada como `APP_GUARD` global em `AppModule`;
 - hash de senha com **bcrypt**;
 - recuperação de senha por e-mail via `@nestjs-modules/mailer` e Nodemailer;
-- documentação interativa com Swagger;
+- documentação interativa com **Swagger**;
+- limitação global de requisições com `@nestjs/throttler`.
 
-A aplicação é organizada em módulos Nest. `AppModule` carrega configuração, conexão TypeORM, limitação global de requisições, autenticação e usuários. As entidades TypeORM modelam o domínio e as migrations mantêm o esquema do banco fora do ciclo de inicialização da aplicação (`synchronize: false`).
+A aplicação é organizada em módulos Nest. `AppModule` carrega configuração, conexão TypeORM, limitação global de requisições, guard JWT e os módulos de domínio. As entidades TypeORM modelam o domínio e as migrations mantêm o esquema do banco fora do ciclo de inicialização da aplicação (`synchronize: false`).
 
 ## Funcionalidades atuais
 
-### Implementado agora: autenticação e perfil
+### Autenticação e perfil
 
 - Cadastro de organização e primeiro usuário, criado com o papel `OWNER`.
 - Validação dos dados de entrada, normalização do e-mail no cadastro e prevenção de duplicidade por e-mail, CNPJ ou slug da organização.
 - Login com JWT de validade de um dia; usuários e organizações inativos não autenticam.
+- Login retorna um objeto `{ accessToken }` no corpo da resposta.
 - Solicitação de recuperação de senha com resposta genérica e token aleatório armazenado como hash, válido por uma hora.
 - Redefinição de senha com invalidação do token após o uso.
 - Rota de perfil protegida por JWT registrada em `GET /users/me`.
 
-### Domínios ainda indisponíveis
+### Clientes
 
-As entidades de clientes, negociações, tarefas, interações e dashboard já existem no código, mas isso **não** significa que seus endpoints estejam implementados ou publicados.
+- CRUD completo de clientes por organização: criar, listar, buscar por id, atualizar e remover.
+- Cada cliente pertence à organização do usuário autenticado e ao seu `owner` por padrão.
+- Filtro automático por `organizationId` no service, impedindo leitura de clientes de outras organizações.
+
+### Negociações (deals)
+
+- `POST /deals` cria uma negociação vinculada a um cliente da mesma organização.
+- `GET /deals` lista negociações com paginação, filtros (`stage`, `customerId`, `ownerId`, intervalo de datas) e ordenação (`sortBy` e `sortOrder`).
+- Resposta paginada segue o formato `{ data: DealResponseDto[], meta: { page, limit, total, totalPages } }`.
+
+### Guard global
+
+- `JwtAuthGuard` é registrado uma única vez como `APP_GUARD` em `AppModule`, aplicando autenticação a todas as rotas, exceto as marcadas com `@Public()` (cadastro, login, recuperação e redefinição de senha).
+
+### Coleção HTTP
+
+- O diretório `http/` traz scripts HTTPie e payloads JSON para testar os endpoints manualmente.
+- Os scripts usam caminho relativo corrigido via `cd "$(dirname "$0")"`, garantindo execução a partir de qualquer pasta.
+- O subdiretório `http/payloads/secrets/` é ignorado pelo Git e guarda credenciais reais fora do repositório.
 
 ## Estrutura do projeto
 
 ```text
-src/
-├── auth/                 # Cadastro, login e recuperação de senha
-│   ├── dto/              # Contratos e validações de entrada/saída
-│   ├── auth.controller.ts
-│   ├── auth.module.ts
-│   └── auth.service.ts
-├── common/
-│   ├── decorators/       # Decorador para rotas públicas
-│   ├── guards/           # Guarda JWT e ponto de extensão para papéis
-│   └── utils/            # Geração de slug
-├── entity/               # Entidades TypeORM do domínio CRM
-├── migration/            # Migrations TypeORM
-├── users/                # Endpoint de perfil
-├── app.module.ts         # Composição de módulos e infraestrutura
-├── data-source.ts        # Data source usado pelas migrations
-└── main.ts               # Bootstrap Fastify, validação e Swagger
+api-nuvora-crm/
+├── http/                  # Coleção HTTPie (scripts + payloads JSON)
+├── src/
+│   ├── auth/              # Cadastro, login e recuperação de senha
+│   │   ├── dto/
+│   │   ├── auth.controller.ts
+│   │   ├── auth.module.ts
+│   │   └── auth.service.ts
+│   ├── common/
+│   │   ├── decorators/    # Decorador para rotas públicas
+│   │   ├── guards/        # JwtAuthGuard
+│   │   └── utils/         # Geração de slug
+│   ├── customers/         # CRUD de clientes
+│   ├── deals/             # Negociações (paginação e filtros)
+│   ├── entity/            # Entidades TypeORM do domínio CRM
+│   ├── migration/         # Migrations TypeORM
+│   ├── users/             # Endpoint de perfil
+│   ├── app.module.ts      # Composição de módulos e APP_GUARD
+│   ├── data-source.ts     # Data source usado pelas migrations
+│   └── main.ts            # Bootstrap Fastify, validação e Swagger
+├── .env-example
+├── package.json
+└── tsconfig.json
 ```
 
 ## Pré-requisitos
@@ -78,7 +104,6 @@ src/
 | Variável | Uso |
 | --- | --- |
 | `PORT` | Porta HTTP da API; se ausente, a aplicação usa `3000`. |
-| `TYPEORM_CONNECTION` | Indicador de conexão presente no arquivo de exemplo; a conexão da aplicação é configurada como PostgreSQL no código. |
 | `TYPEORM_HOST` | Host do PostgreSQL. |
 | `TYPEORM_PORT` | Porta do PostgreSQL; se ausente, o código usa `5432`. |
 | `TYPEORM_USERNAME` | Usuário do banco. |
@@ -145,25 +170,86 @@ A rota `/api` é configurada apenas fora de produção; ela não é exposta quan
 
 ## Endpoints registrados atualmente
 
+### Autenticação e perfil
+
 | Método | Rota | Autenticação | Descrição |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | Não | Cria uma organização e o primeiro usuário proprietário. |
-| `POST` | `/auth/login` | Não | Valida credenciais e retorna um JWT como string. |
+| `POST` | `/auth/login` | Não | Valida credenciais e retorna `{ accessToken }`. |
 | `POST` | `/auth/forgot-password` | Não | Solicita recuperação de senha; limitado a 3 requisições por 60 segundos. |
 | `POST` | `/auth/reset-password` | Não | Redefine a senha usando um token válido; limitado a 5 requisições por 60 segundos. |
-| `GET` | `/users/me` | Bearer JWT | Rota de perfil protegida, registrada no controlador. Veja a limitação conhecida abaixo. |
+| `GET` | `/users/me` | Bearer JWT | Rota de perfil protegida pela guard global. |
 
-Também há `GET /ping`, que retorna `Pong` e serve como verificação simples de disponibilidade local.
+### Clientes
 
-Para chamar a rota protegida, envie o token retornado por `/auth/login` no cabeçalho:
+Todas as rotas exigem Bearer JWT, validado pela guard global.
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/customers` | Cria um cliente na organização do token. |
+| `GET` | `/customers` | Lista os clientes da organização. |
+| `GET` | `/customers/:id` | Busca um cliente por id dentro da organização. |
+| `PATCH` | `/customers/:id` | Atualiza um cliente da organização. |
+| `DELETE` | `/customers/:id` | Remove um cliente da organização. |
+
+### Negociações
+
+Todas as rotas exigem Bearer JWT, validado pela guard global.
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/deals` | Cria uma negociação vinculada a um cliente da organização. |
+| `GET` | `/deals` | Lista negociações com paginação, filtros e ordenação. |
+| `GET` | `/deals/:id` | Busca uma negociação por id (stub atual). |
+| `PATCH` | `/deals/:id` | Atualiza uma negociação (stub atual). |
+| `DELETE` | `/deals/:id` | Remove uma negociação (stub atual). |
+
+`GET /deals` aceita os seguintes query params, todos opcionais:
+
+| Param | Tipo | Descrição |
+| --- | --- | --- |
+| `page` | number | Página atual; padrão `1`. |
+| `limit` | number | Tamanho da página; padrão `10`. |
+| `stage` | enum | Estágio da negociação (`QUALIFICATION`, `PROPOSAL`, `NEGOTIATION`, `CLOSED_WON`, `CLOSED_LOST`). |
+| `customerId` | uuid | Filtra por cliente. |
+| `ownerId` | uuid | Filtra por proprietário. |
+| `startDate` | date | Limite inferior de `createdAt` (`YYYY-MM-DD`). |
+| `endDate` | date | Limite superior de `createdAt` (`YYYY-MM-DD`). |
+| `sortBy` | enum | Campo de ordenação (`value`, `createdAt`, `expectedCloseDate`); padrão `createdAt`. |
+| `sortOrder` | enum | Direção (`ASC`, `DESC`); padrão `DESC`. |
+
+### Saúde
+
+| Método | Rota | Autenticação | Descrição |
+| --- | --- | --- | --- |
+| `GET` | `/ping` | Não | Retorna `Pong` como verificação simples de disponibilidade. |
+
+Para chamar rotas protegidas, envie o token retornado por `/auth/login` no cabeçalho:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-### Limitação conhecida do perfil
+## Testando com a coleção HTTPie
 
-Embora `GET /users/me` esteja registrado e protegido por `JwtAuthGuard`, o serviço atual referencia uma variável `id` que não foi definida. Assim, a rota não retorna um perfil utilizável no estado atual. Ela deve ser concluída antes de ser consumida como endpoint de perfil funcional.
+Com a aplicação em execução, a coleção `http/` permite testar os endpoints sem montar `curl` manualmente.
+
+Exemplo, a partir da raiz do repositório:
+
+```bash
+./http/auth/register.sh "minha-senha"
+./http/auth/login.sh
+./http/customers/create.sh
+./http/deals/findAll.sh
+```
+
+Variáveis sensíveis (por exemplo, o `userAdmin.json` usado pelo `login.sh`) ficam em `http/payloads/secrets/`, que está ignorado pelo Git. O `register.sh` recebe a senha como primeiro argumento em vez de versioná-la.
+
+A coleção assume que a variável `$BASE` aponta para a API, por exemplo:
+
+```fish
+set -gx BASE "http://localhost:3001"
+```
 
 ## Segurança: práticas presentes e limitações atuais
 
@@ -174,20 +260,20 @@ Embora `GET /users/me` esteja registrado e protegido por `JwtAuthGuard`, o servi
 - O `ValidationPipe` global transforma entradas, remove campos não permitidos e rejeita campos desconhecidos.
 - O login devolve a mesma mensagem para credenciais inválidas, usuário inativo e organização inativa.
 - Tokens de recuperação são gerados com `crypto.randomBytes`, persistidos como hash SHA-256 e expirados após uma hora; são anulados depois do uso.
-- A guarda JWT exige o esquema `Authorization: Bearer <token>` e verifica a assinatura com `SECRET_KEY`.
+- A guard JWT exige o esquema `Authorization: Bearer <token>` e verifica a assinatura com `SECRET_KEY`.
+- A guard JWT é aplicada globalmente, exceto nas rotas marcadas com `@Public()`.
 - Há limitação global de 60 requisições por 60 segundos, além de limites mais restritos nas rotas de recuperação de senha.
-- `.env` está ignorado pelo Git.
+- `.env` e `http/payloads/secrets/` estão ignorados pelo Git.
 
 ### Limitações e TODOs verificados
 
-- A implementação usa `SECRET_KEY`, enquanto o arquivo `.env-example` fornece `JWT_SECRET`; o ambiente local precisa definir `SECRET_KEY` para login e rotas protegidas funcionarem.
-- O módulo SMTP exige `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` e `SMTP_PASS`, mas elas não constam no arquivo de exemplo.
-- O link de recuperação depende de `FRONTEND_URI`, que também não consta no arquivo de exemplo.
-- A autorização por organização e por papel prevista para os módulos CRM ainda não está implementada em rotas de clientes, negociações, tarefas, interações ou dashboard, pois essas rotas ainda não existem.
-- `GET /users/me` permanece incompleto, conforme a limitação descrita acima.
-- A compilação atual falha em `src/users/users.service.ts` porque `id` é referenciado sem definição. A aplicação precisa dessa correção antes de poder ser compilada e executada a partir do código-fonte.
+- O arquivo `.env-example` não cobre `SECRET_KEY`, `FRONTEND_URI` e as variáveis SMTP; o ambiente local precisa adicioná-las.
+- `GET /deals/:id`, `PATCH /deals/:id` e `DELETE /deals/:id` permanecem como stubs que retornam apenas o id recebido; precisam ser implementados.
+- `GET /users/me` continua dependendo da evolução do serviço de usuários.
+- A autorização por papel já tem `RolesWithFullAccess` referenciado, mas ainda não restringe clientes ou negociações.
+- Tarefas, interações e dashboard existem como entidades, mas não têm controllers nem rotas publicadas.
+- Integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial permanecem fora do escopo inicial.
+
 ## Roadmap
 
-Evoluções futuras podem incluir módulos de clientes, negociações, tarefas, interações e dashboard, com isolamento por organização, autorização baseada em papel, DTOs validados, erros consistentes, Swagger, migrations, seed e execução local com PostgreSQL.
-
-Itens explicitamente fora do escopo inicial incluem integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial completo.
+Evoluções futuras podem incluir: autorização por papel em clientes e negociações, módulos de tarefas, interações e dashboard com isolamento por organização, DTOs validados em todos os fluxos, seed inicial, suíte de testes automatizados, upload de anexos e integrações externas.
