@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -6,7 +7,10 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { CreateDealDto } from "./dto/create-deal.dto";
 import { UpdateDealDto } from "./dto/update-deal.dto";
-import { TenantContext } from "src/common/utils/tenant-context";
+import {
+  ROLES_WITH_FULL_ACCESS,
+  TenantContext,
+} from "src/common/utils/tenant-context";
 import { Customer } from "src/entity/Customer";
 import {
   Between,
@@ -19,6 +23,7 @@ import { Deal, DealStage } from "src/entity/Deal";
 import { DealResponseDto } from "./dto/deal-response.dto";
 import { PaginatedDealResponseDTO } from "./dto/paginated-deal-response.dto";
 import { QueryDealDTO } from "./dto/query-deal-dto";
+import { UpdateStageDealDto } from "./dto/update-stage-deal.dto";
 
 @Injectable()
 export class DealsService {
@@ -28,7 +33,7 @@ export class DealsService {
 
     @InjectRepository(Deal)
     private readonly dealRepo: Repository<Deal>,
-  ) { }
+  ) {}
 
   private toResponseDto(deal: Deal): DealResponseDto {
     return {
@@ -53,10 +58,10 @@ export class DealsService {
     { ownerId, organizationId }: TenantContext,
   ): Promise<DealResponseDto> {
     const message = "Customer not found";
-    const invalidMessage = "Invalid credentials";
+    const unauthorizedMessage = "Unauthorized";
 
     if (!ownerId || !organizationId) {
-      throw new UnauthorizedException(invalidMessage);
+      throw new UnauthorizedException(unauthorizedMessage);
     }
 
     const customer = await this.customerRepo.findOne({
@@ -93,10 +98,10 @@ export class DealsService {
     { ownerId, organizationId }: TenantContext,
     query: QueryDealDTO,
   ): Promise<PaginatedDealResponseDTO> {
-    const invalidMessage = "Invalid credentials";
+    const unauthorizedMessage = "Unauthorized";
 
     if (!ownerId || !organizationId) {
-      throw new UnauthorizedException(invalidMessage);
+      throw new UnauthorizedException(unauthorizedMessage);
     }
 
     const where: FindOptionsWhere<Deal> = { organizationId };
@@ -165,12 +170,103 @@ export class DealsService {
     return this.toResponseDto(deal);
   }
 
-  update(id: number, updateDealDto: UpdateDealDto) {
-    void updateDealDto;
-    return `This action updates a #${id} deal`;
+  async update(
+    id: string,
+    updateDealDto: UpdateDealDto,
+    { ownerId, organizationId, role }: TenantContext,
+  ): Promise<DealResponseDto> {
+    const unauthorizedMessage = "Unauthorized";
+    const customerMessage = "Customer not found";
+    const message = "Deal not found";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(unauthorizedMessage);
+    }
+
+    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const deal = await this.dealRepo.findOne({ where });
+
+    if (!deal) {
+      throw new NotFoundException(message);
+    }
+
+    if (updateDealDto.customerId !== undefined) {
+      const customer = await this.customerRepo.findOne({
+        where: { id: updateDealDto.customerId, organizationId },
+      });
+      if (!customer) {
+        throw new NotFoundException(customerMessage);
+      }
+      deal.customerId = updateDealDto.customerId;
+    }
+
+    if (updateDealDto.title !== undefined) {
+      deal.title = updateDealDto.title;
+    }
+
+    if (updateDealDto.value !== undefined) {
+      deal.value = updateDealDto.value;
+    }
+
+    if (updateDealDto.probability !== undefined) {
+      deal.probability = updateDealDto.probability;
+    }
+
+    if (updateDealDto.expectedCloseDate !== undefined) {
+      deal.expectedCloseDate = new Date(updateDealDto.expectedCloseDate);
+    }
+
+    await this.dealRepo.save(deal);
+
+    return this.toResponseDto(deal);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} deal`;
+  async updateStage(
+    id: string,
+    updateStageDealDto: UpdateStageDealDto,
+    { ownerId, organizationId, role }: TenantContext,
+  ): Promise<DealResponseDto> {
+    const unauthorizedMessage = "Unauthorized";
+    const BadRequestMessage =
+      "lostReason is required when stage is CLOSED_LOST";
+    const message = "Deal not found";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(unauthorizedMessage);
+    }
+
+    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const deal = await this.dealRepo.findOne({ where });
+
+    if (!deal) {
+      throw new NotFoundException(message);
+    }
+
+    if (
+      updateStageDealDto.stage === DealStage.CLOSED_LOST &&
+      !updateStageDealDto.lostReason?.trim()
+    ) {
+      throw new BadRequestException(BadRequestMessage);
+    }
+
+    deal.stage = updateStageDealDto.stage;
+    if (updateStageDealDto.lostReason !== undefined) {
+      deal.lostReason = updateStageDealDto.lostReason;
+    }
+    deal.closedAt = [DealStage.CLOSED_WON, DealStage.CLOSED_LOST].includes(
+      updateStageDealDto.stage,
+    )
+      ? new Date()
+      : null;
+
+    await this.dealRepo.save(deal);
+
+    return this.toResponseDto(deal);
   }
 }
