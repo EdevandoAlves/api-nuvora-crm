@@ -1,6 +1,6 @@
 {
   "title": "Contrato anual atualizado",
   "value": 60000,
-  "stage": "PROPOSAL",
-  "probability": 70
+  "probability": 70,
+  "expectedCloseDate": "2027-01-31"
 }
