@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Req,
   Query,
   ParseUUIDPipe,
@@ -24,12 +23,13 @@ import type { AuthRequest } from "src/common/guards/jwt-auth.guard";
 import { QueryDealDTO } from "./dto/query-deal-dto";
 import { DealResponseDto } from "./dto/deal-response.dto";
 import { PaginatedDealResponseDTO } from "./dto/paginated-deal-response.dto";
+import { UpdateStageDealDto } from "./dto/update-stage-deal.dto";
 
 @ApiTags("Deals")
 @ApiBearerAuth()
 @Controller("deals")
 export class DealsController {
-  constructor(private readonly dealsService: DealsService) { }
+  constructor(private readonly dealsService: DealsService) {}
 
   @Post()
   @ApiOperation({ summary: "Create a deal for an existing customer" })
@@ -81,14 +81,30 @@ export class DealsController {
   @Patch(":id")
   @ApiOperation({ summary: "Update a deal" })
   @ApiParam({ name: "id", format: "uuid" })
-  update(@Param("id") id: string, @Body() updateDealDto: UpdateDealDto) {
-    return this.dealsService.update(+id, updateDealDto);
+  update(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() updateDealDto: UpdateDealDto,
+    @Req() request: AuthRequest,
+  ): Promise<DealResponseDto> {
+    return this.dealsService.update(id, updateDealDto, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 
-  @Delete(":id")
-  @ApiOperation({ summary: "Remove a deal" })
+  @Patch(":id/stage")
+  @ApiOperation({ summary: "Update a deal stage" })
   @ApiParam({ name: "id", format: "uuid" })
-  remove(@Param("id") id: string) {
-    return this.dealsService.remove(+id);
+  updateStage(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() updateStageDealDto: UpdateStageDealDto,
+    @Req() request: AuthRequest,
+  ): Promise<DealResponseDto> {
+    return this.dealsService.updateStage(id, updateStageDealDto, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
   }
 }

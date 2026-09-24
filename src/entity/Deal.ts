@@ -65,13 +65,13 @@ export class Deal {
   probability: number; // 0-100
 
   @Column({ type: "date", nullable: true })
-  expectedCloseDate: Date;
+  expectedCloseDate: Date | null;
 
   @Column({ type: "varchar", length: 255, nullable: true })
-  lostReason: string;
+  lostReason: string | null;
 
   @Column({ type: "timestamp", nullable: true })
-  closedAt: Date;
+  closedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;
