@@ -25,7 +25,14 @@ import {
   TextField,
 } from "../components/ui";
 import { formatBRL, formatDate, formatPercent, stageLabel } from "../format";
-import type { Customer, Deal, DealStage, Paginated } from "../types";
+import type {
+  Customer,
+  Deal,
+  DealProduct,
+  DealStage,
+  Paginated,
+  Product,
+} from "../types";
 import { useApiQuery } from "../useApiQuery";
 import "../../styles/briefing.css";
 
@@ -220,6 +227,197 @@ function DealCreateModal({
   );
 }
 
+function DealItemsSection({ deal }: { deal: Deal }) {
+  const itemsQuery = useApiQuery<DealProduct[]>(`/deals/${deal.id}/products`);
+  const productsQuery = useApiQuery<Product[]>("/products");
+  const [form, setForm] = useState({
+    productId: "",
+    quantity: "1",
+    unitPrice: "",
+    discount: "0",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const products = (productsQuery.data ?? []).filter(
+    (product) => product.isActive,
+  );
+  const items = itemsQuery.data ?? [];
+  const itemsTotal = items.reduce(
+    (sum, item) => sum + Number(item.totalPrice),
+    0,
+  );
+
+  const addItem = async (event: FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await api(`/deals/${deal.id}/products`, {
+        method: "POST",
+        body: JSON.stringify({
+          productId: form.productId,
+          quantity: Number.parseInt(form.quantity, 10),
+          unitPrice: form.unitPrice
+            ? Number.parseFloat(form.unitPrice)
+            : undefined,
+          discount: Number.parseFloat(form.discount || "0"),
+        }),
+      });
+      setForm({
+        productId: "",
+        quantity: "1",
+        unitPrice: "",
+        discount: "0",
+      });
+      await itemsQuery.reload();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Não foi possível adicionar.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeItem = async (item: DealProduct) => {
+    setError("");
+    try {
+      await api(`/deals/${deal.id}/products/${item.id}`, {
+        method: "DELETE",
+      });
+      await itemsQuery.reload();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Não foi possível remover.",
+      );
+    }
+  };
+
+  return (
+    <section className="drawer-section">
+      <header className="drawer-section__head">
+        <h3>Itens</h3>
+        <span className="mono">{formatBRL(itemsTotal)}</span>
+      </header>
+
+      {error ? <InlineNotice>{error}</InlineNotice> : null}
+
+      {itemsQuery.loading ? (
+        <Skeleton className="sk-row" />
+      ) : items.length === 0 ? (
+        <p className="drawer-empty">Nenhum produto vinculado ao negócio.</p>
+      ) : (
+        <div className="items-list">
+          {items.map((item) => (
+            <div className="item-row" key={item.id}>
+              <div>
+                <strong>{item.productName ?? "Produto"}</strong>
+                <span className="mono">
+                  {item.quantity} × {formatBRL(item.unitPrice)}
+                  {item.discount > 0 ? ` · -${item.discount}%` : ""}
+                </span>
+              </div>
+              <span className="mono">{formatBRL(item.totalPrice)}</span>
+              <IconButton
+                label="Remover item"
+                icon={Trash2}
+                size="sm"
+                onClick={() => {
+                  void removeItem(item);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {products.length === 0 ? (
+        <p className="drawer-empty">
+          Cadastre um produto no catálogo para adicionar itens.
+        </p>
+      ) : (
+        <form className="item-form" onSubmit={addItem}>
+          <SelectField
+            label="Produto"
+            name="productId"
+            className="field--full"
+            value={form.productId}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                productId: event.target.value,
+              }))
+            }
+            options={[
+              { value: "", label: "Selecione um produto" },
+              ...products.map((product) => ({
+                value: product.id,
+                label: `${product.name} · ${formatBRL(product.price)}`,
+              })),
+            ]}
+            required
+          />
+          <TextField
+            label="Qtd."
+            name="quantity"
+            type="number"
+            min={1}
+            value={form.quantity}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                quantity: event.target.value,
+              }))
+            }
+            required
+          />
+          <TextField
+            label="Preço unit."
+            name="unitPrice"
+            type="number"
+            min={0}
+            step="0.01"
+            value={form.unitPrice}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                unitPrice: event.target.value,
+              }))
+            }
+            placeholder="Preço do produto"
+          />
+          <TextField
+            label="Desconto %"
+            name="discount"
+            type="number"
+            min={0}
+            max={100}
+            value={form.discount}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                discount: event.target.value,
+              }))
+            }
+          />
+          <div className="field--full">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Plus}
+              type="submit"
+              loading={saving}
+            >
+              Adicionar item
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
+
 function DealDrawer({
   deal,
   customers,
@@ -313,6 +511,8 @@ function DealDrawer({
           </span>
         </div>
       </div>
+
+      <DealItemsSection deal={deal} />
 
       <form id="deal-edit-form" onSubmit={submit}>
         {error ? <InlineNotice>{error}</InlineNotice> : null}
