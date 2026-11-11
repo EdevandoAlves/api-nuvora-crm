@@ -4,6 +4,22 @@ API REST demonstrativa de um CRM comercial, criada para portfólio com foco em m
 
 > **Status atual:** a API expõe autenticação, perfil, clientes, contatos, interações, tarefas, negociações, catálogo de produtos, itens de negociação, dashboard operacional e gestão de equipe. Planos/billing, anexos e integrações externas permanecem fora do escopo atual.
 
+## Frontend (propostas)
+
+O diretório `web/` contém o app **React + TypeScript + Vite** com três propostas de interface para o dashboard operacional:
+
+- **A · Console** — grade densa, tabela, barras e leitura operacional.
+- **B · Briefing** — layout editorial assimétrico, foco nas prioridades do dia.
+- **C · Atlas** — pipeline como quadro kanban, com etapas, cards e painel lateral.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+A barra inferior alterna entre as propostas e o tema claro/escuro. A implementação do design system final começa após a escolha de uma proposta.
+
 ## Propósito
 
 O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT, gerenciar clientes e acompanhar o ciclo de vida de negociações dentro de cada organização.
