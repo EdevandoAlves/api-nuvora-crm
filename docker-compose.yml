@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nuvora-crm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TYPEORM_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD:-nuvora_dev}
+      POSTGRES_DB: ${TYPEORM_DATABASE:-nuvora_crm}
+    ports:
+      - "${TYPEORM_PORT:-5432}:5432"
+    volumes:
+      - nuvora_crm_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  nuvora_crm_pgdata:
