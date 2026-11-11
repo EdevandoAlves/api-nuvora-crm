@@ -181,6 +181,32 @@ describe("Nuvora CRM API (e2e)", () => {
     return response.body;
   }
 
+  async function createProduct(
+    token: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const response = await request(server)
+      .post("/products")
+      .set(auth(token))
+      .send({ name: "Plano Pro", price: 100, ...overrides })
+      .expect(201);
+    return response.body;
+  }
+
+  async function addDealProduct(
+    token: string,
+    dealId: string,
+    productId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const response = await request(server)
+      .post(`/deals/${dealId}/products`)
+      .set(auth(token))
+      .send({ productId, quantity: 1, ...overrides })
+      .expect(201);
+    return response.body;
+  }
+
   it("returns the authenticated user profile without credentials", async () => {
     const owner = await register();
 
@@ -580,5 +606,113 @@ describe("Nuvora CRM API (e2e)", () => {
       .set(auth(salesToken))
       .send({ userId: me.body.id })
       .expect(403);
+  });
+
+  it("manages products and restricts catalog writes", async () => {
+    const owner = await register();
+    const product = await createProduct(owner.token, {
+      name: "Plano Enterprise",
+      price: 250,
+      category: "Planos",
+    });
+    expect(product.price).toBe(250);
+
+    const list = await request(server)
+      .get("/products")
+      .query({ search: "Enterprise" })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(list.body.map((item) => item.id)).toContain(product.id);
+
+    const updated = await request(server)
+      .patch(`/products/${product.id}`)
+      .set(auth(owner.token))
+      .send({ price: 300, isActive: false })
+      .expect(200);
+    expect(updated.body.price).toBe(300);
+    expect(updated.body.isActive).toBe(false);
+
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+    await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+
+    await request(server)
+      .post("/products")
+      .set(auth(salesToken))
+      .send({ name: "Sem permissão", price: 10 })
+      .expect(403);
+
+    await request(server).get("/products").set(auth(salesToken)).expect(200);
+
+    await request(server)
+      .delete(`/products/${product.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+  });
+
+  it("manages deal products and recalculates totals", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Produtos");
+    const deal = await createDeal(owner.token, customer.id, "Deal Produtos");
+    const product = await createProduct(owner.token, {
+      name: "Implantação",
+      price: 100,
+    });
+
+    const line = await addDealProduct(owner.token, deal.id, product.id, {
+      quantity: 2,
+      discount: 10,
+    });
+    expect(line.productName).toBe("Implantação");
+    expect(line.totalPrice).toBe(180);
+
+    const lines = await request(server)
+      .get(`/deals/${deal.id}/products`)
+      .set(auth(owner.token))
+      .expect(200);
+    expect(lines.body).toHaveLength(1);
+
+    const updated = await request(server)
+      .patch(`/deals/${deal.id}/products/${line.id}`)
+      .set(auth(owner.token))
+      .send({ quantity: 3, unitPrice: 50, discount: 0 })
+      .expect(200);
+    expect(updated.body.totalPrice).toBe(150);
+
+    await request(server)
+      .delete(`/deals/${deal.id}`)
+      .set(auth(owner.token))
+      .expect(409);
+
+    await request(server)
+      .delete(`/deals/${deal.id}/products/${line.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    await request(server)
+      .delete(`/deals/${deal.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+  });
+
+  it("scopes deal products by deal owner", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+    const deal = await createDeal(owner.token, ownerCustomer.id, "Deal Owner");
+
+    await request(server)
+      .get(`/deals/${deal.id}/products`)
+      .set(auth(salesToken))
+      .expect(404);
   });
 });

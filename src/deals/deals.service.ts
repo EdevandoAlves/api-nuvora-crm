@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -17,6 +18,7 @@ import {
   Repository,
 } from "typeorm";
 import { Deal, DealStage } from "src/entity/Deal";
+import { DealProduct } from "src/entity/DealProduct";
 import { DealResponseDto } from "./dto/deal-response.dto";
 import { PaginatedDealResponseDTO } from "./dto/paginated-deal-response.dto";
 import { QueryDealDTO } from "./dto/query-deal-dto";
@@ -30,6 +32,9 @@ export class DealsService {
 
     @InjectRepository(Deal)
     private readonly dealRepo: Repository<Deal>,
+
+    @InjectRepository(DealProduct)
+    private readonly dealProductRepo: Repository<DealProduct>,
   ) {}
 
   private toResponseDto(deal: Deal): DealResponseDto {
@@ -295,6 +300,13 @@ export class DealsService {
 
     if (!deal) {
       throw new NotFoundException(message);
+    }
+
+    const products = await this.dealProductRepo.count({
+      where: { dealId: deal.id },
+    });
+    if (products > 0) {
+      throw new ConflictException("Deal has products and cannot be removed");
     }
 
     await this.dealRepo.remove(deal);

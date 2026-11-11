@@ -16,12 +16,15 @@ import { User } from "./entity/User";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { RolesGuard } from "./common/guards/roles.guard";
 import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
 import { DealsModule } from "./deals/deals.module";
 import { ContactsModule } from "./contacts/contacts.module";
 import { InteractionsModule } from "./interactions/interactions.module";
 import { TasksModule } from "./tasks/tasks.module";
+import { ProductsModule } from "./products/products.module";
+import { DealProductsModule } from "./deal-products/deal-products.module";
 
 @Module({
   controllers: [AppController],
@@ -29,6 +32,7 @@ import { TasksModule } from "./tasks/tasks.module";
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -74,6 +78,8 @@ import { TasksModule } from "./tasks/tasks.module";
     ContactsModule,
     InteractionsModule,
     TasksModule,
+    ProductsModule,
+    DealProductsModule,
   ],
 })
 export class AppModule {}
