@@ -10,6 +10,10 @@ import { AuthProvider, useAuth } from "./app/auth";
 import { AppShell } from "./app/components/AppShell";
 import { DashboardPage } from "./app/pages/DashboardPage";
 import { LoginPage, RegisterPage } from "./app/pages/AuthPages";
+import {
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from "./app/pages/PasswordPages";
 import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
 import { ContactsPage } from "./app/pages/ContactsPage";
 import { CustomersPage } from "./app/pages/CustomersPage";
@@ -50,6 +54,9 @@ export default function App() {
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/reset-link" element={<ResetPasswordPage />} />
           </Route>
 
           <Route element={<ProtectedRoute />}>

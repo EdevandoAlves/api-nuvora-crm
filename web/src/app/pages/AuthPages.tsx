@@ -6,7 +6,7 @@ import { useAuth } from "../auth";
 import { Button, TextField } from "../components/ui";
 import "./auth.css";
 
-function AuthLayout({ children }: { children: ReactNode }) {
+export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="auth-shell">
       <aside className="auth-brand">
@@ -16,7 +16,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="auth-brand__copy">
           <span className="auth-brand__kicker">CRM operacional</span>
-          <h1>Menos planilha.<br />Mais decisão.</h1>
+          <h1>
+            Menos planilha.
+            <br />
+            Mais decisão.
+          </h1>
           <p>
             Clientes, contatos, tarefas e pipeline no mesmo lugar — com a
             densidade de quem trabalha com vendas todos os dias.
@@ -88,6 +92,9 @@ export function LoginPage() {
           onChange={(event) => setPassword(event.target.value)}
           required
         />
+        <div className="auth-form__aside">
+          <Link to="/forgot-password">Esqueci minha senha</Link>
+        </div>
         <Button
           type="submit"
           variant="primary"

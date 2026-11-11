@@ -17,7 +17,8 @@ Use uma conta existente ou crie uma organização em `/register`.
 
 ## Rotas
 
-- `/login` e `/register` — autenticação.
+- `/login`, `/register` — autenticação.
+- `/forgot-password`, `/reset-password` e `/reset-link` — recuperação e redefinição de senha.
 - `/dashboard` — resumo operacional com caixa, pipeline, tarefas e atividade.
 - `/clientes` e `/clientes/:id` — carteira, cadastro, contatos, interações e histórico.
 - `/negocios` — pipeline kanban/tabela, criação, edição, estágio e itens.
