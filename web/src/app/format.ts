@@ -1,4 +1,11 @@
-import type { DealStage, TaskPriority, TaskType } from "./types";
+import type {
+  CustomerStatus,
+  DealStage,
+  InteractionType,
+  TaskPriority,
+  TaskType,
+  UserRole,
+} from "./types";
 
 const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -105,6 +112,71 @@ export function taskTypeLabel(type: TaskType): string {
     MEETING: "Reunião",
   };
   return labels[type];
+}
+
+export function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+export function formatCnpj(value: string | null): string {
+  if (!value || value.length !== 14) return value ?? "—";
+  return value.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5",
+  );
+}
+
+export function customerStatusLabel(status: CustomerStatus): string {
+  const labels: Record<CustomerStatus, string> = {
+    LEAD: "Lead",
+    PROSPECT: "Prospect",
+    CUSTOMER: "Cliente",
+    CHURNED: "Churn",
+  };
+  return labels[status];
+}
+
+export function customerStatusTone(
+  status: CustomerStatus,
+): "neutral" | "info" | "success" | "danger" {
+  return status === "CUSTOMER"
+    ? "success"
+    : status === "CHURNED"
+      ? "danger"
+      : status === "PROSPECT"
+        ? "info"
+        : "neutral";
+}
+
+export function interactionTypeLabel(type: InteractionType): string {
+  const labels: Record<InteractionType, string> = {
+    EMAIL: "E-mail",
+    CALL: "Ligação",
+    MEETING: "Reunião",
+    NOTE: "Nota",
+    TASK: "Tarefa",
+    WHATSAPP: "WhatsApp",
+  };
+  return labels[type];
+}
+
+export function roleLabel(role: UserRole): string {
+  const labels: Record<UserRole, string> = {
+    OWNER: "Owner",
+    ADMIN: "Admin",
+    MANAGER: "Manager",
+    SALES: "Sales",
+    SUPPORT: "Support",
+  };
+  return labels[role];
+}
+
+export function isManagementRole(role: UserRole): boolean {
+  return role === "OWNER" || role === "ADMIN" || role === "MANAGER";
 }
 
 export function isOpenStage(stage: DealStage): boolean {

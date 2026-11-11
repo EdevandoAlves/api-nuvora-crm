@@ -124,3 +124,98 @@ export type Paginated<T> = {
     totalPages: number;
   };
 };
+
+export type CustomerStatus = "LEAD" | "PROSPECT" | "CUSTOMER" | "CHURNED";
+
+export type Customer = {
+  id: string;
+  organizationId: string;
+  ownerId: string;
+  companyName: string;
+  cnpj: string | null;
+  industry: string | null;
+  website: string | null;
+  employeeCount: number | null;
+  annualRevenue: number | null;
+  address: Record<string, string> | null;
+  status: CustomerStatus;
+  source: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Contact = {
+  id: string;
+  organizationId: string;
+  customerId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  position: string | null;
+  isPrimary: boolean;
+  linkedin: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InteractionType =
+  | "EMAIL"
+  | "CALL"
+  | "MEETING"
+  | "NOTE"
+  | "TASK"
+  | "WHATSAPP";
+
+export type Interaction = {
+  id: string;
+  organizationId: string;
+  customerId: string;
+  contactId: string | null;
+  userId: string;
+  type: InteractionType;
+  subject: string | null;
+  description: string;
+  duration: number | null;
+  scheduledAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Product = {
+  id: string;
+  organizationId: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DealProduct = {
+  id: string;
+  dealId: string;
+  productId: string;
+  productName: string | null;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  totalPrice: number;
+};
+
+export type TeamUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  avatar: string | null;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

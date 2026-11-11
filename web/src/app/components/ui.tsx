@@ -1,11 +1,10 @@
-import {
-  Loader2,
-  type LucideIcon,
-} from "lucide-react";
+import { AlertTriangle, Loader2, X, type LucideIcon } from "lucide-react";
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -100,6 +99,215 @@ export function TextField({
         <span className="field__hint">{hint}</span>
       ) : null}
     </label>
+  );
+}
+
+type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  error?: string;
+  hint?: string;
+  options: { value: string; label: string }[];
+};
+
+export function SelectField({
+  label,
+  error,
+  hint,
+  id,
+  options,
+  className = "",
+  ...props
+}: SelectFieldProps) {
+  const selectId = id ?? props.name ?? label.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <label className="field" htmlFor={selectId}>
+      <span className="field__label">{label}</span>
+      <select
+        {...props}
+        id={selectId}
+        className={`field__input field__select${error ? " is-error" : ""} ${className}`.trim()}
+        aria-invalid={Boolean(error)}
+      >
+        {options.map((option) => (
+          <option value={option.value} key={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error ? (
+        <span className="field__error">{error}</span>
+      ) : hint ? (
+        <span className="field__hint">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+type TextareaFieldProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  error?: string;
+  hint?: string;
+};
+
+export function TextareaField({
+  label,
+  error,
+  hint,
+  id,
+  className = "",
+  ...props
+}: TextareaFieldProps) {
+  const textareaId =
+    id ?? props.name ?? label.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <label className="field" htmlFor={textareaId}>
+      <span className="field__label">{label}</span>
+      <textarea
+        {...props}
+        id={textareaId}
+        className={`field__input field__textarea${error ? " is-error" : ""} ${className}`.trim()}
+        aria-invalid={Boolean(error)}
+      />
+      {error ? (
+        <span className="field__error">{error}</span>
+      ) : hint ? (
+        <span className="field__hint">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+export function Modal({
+  open,
+  title,
+  description,
+  onClose,
+  children,
+  footer,
+  size = "md",
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  size?: "sm" | "md" | "lg";
+}) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onMouseDown={onClose}>
+      <div
+        className={`modal modal--${size}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="modal__head">
+          <div>
+            <h2>{title}</h2>
+            {description ? <p>{description}</p> : null}
+          </div>
+          <IconButton label="Fechar" icon={X} size="sm" onClick={onClose} />
+        </header>
+        <div className="modal__body">{children}</div>
+        {footer ? <footer className="modal__footer">{footer}</footer> : null}
+      </div>
+    </div>
+  );
+}
+
+export function Drawer({
+  open,
+  title,
+  description,
+  onClose,
+  children,
+  footer,
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="drawer-overlay" onMouseDown={onClose}>
+      <aside
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="modal__head">
+          <div>
+            <h2>{title}</h2>
+            {description ? <p>{description}</p> : null}
+          </div>
+          <IconButton label="Fechar" icon={X} size="sm" onClick={onClose} />
+        </header>
+        <div className="drawer__body">{children}</div>
+        {footer ? <footer className="modal__footer">{footer}</footer> : null}
+      </aside>
+    </div>
+  );
+}
+
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Confirmar",
+  loading = false,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  loading?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      title={title}
+      onClose={onClose}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={onConfirm} loading={loading}>
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      <div className="confirm-message">
+        <AlertTriangle size={18} />
+        <p>{message}</p>
+      </div>
+    </Modal>
+  );
+}
+
+export function InlineNotice({
+  tone = "danger",
+  children,
+}: {
+  tone?: "danger" | "success";
+  children: ReactNode;
+}) {
+  return (
+    <div className={`inline-notice inline-notice--${tone}`}>{children}</div>
   );
 }
 

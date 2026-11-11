@@ -10,6 +10,8 @@ import { AuthProvider, useAuth } from "./app/auth";
 import { AppShell } from "./app/components/AppShell";
 import { DashboardPage } from "./app/pages/DashboardPage";
 import { LoginPage, RegisterPage } from "./app/pages/AuthPages";
+import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
+import { CustomersPage } from "./app/pages/CustomersPage";
 import { PlaceholderPage } from "./app/pages/PlaceholderPage";
 
 function FullPageLoader() {
@@ -50,15 +52,8 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route
-                path="/clientes"
-                element={
-                  <PlaceholderPage
-                    title="Clientes"
-                    description="Carteira, filtros e ficha do cliente."
-                  />
-                }
-              />
+              <Route path="/clientes" element={<CustomersPage />} />
+              <Route path="/clientes/:id" element={<CustomerDetailPage />} />
               <Route
                 path="/negocios"
                 element={
