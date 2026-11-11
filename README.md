@@ -2,7 +2,7 @@
 
 API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação, isolamento por organização e uma base preparada para evoluir regras de negócio. Não é apresentada como um CRM SaaS completo.
 
-> **Status atual:** a API expõe rotas de autenticação, perfil, clientes e negociações (incluindo atualização de estágio e remoção). Tarefas, interações, contatos, produtos e dashboard permanecem apenas como entidades/modelos no banco, sem rotas publicadas.
+> **Status atual:** a API expõe autenticação, perfil, clientes, contatos, interações, tarefas, negociações, catálogo de produtos, itens de negociação, dashboard operacional e gestão de equipe. Planos/billing, anexos e integrações externas permanecem fora do escopo atual.
 
 ## Propósito
 
@@ -45,11 +45,52 @@ A aplicação é organizada em módulos Nest. `AppModule` carrega configuração
 
 - `POST /deals` cria uma negociação vinculada a um cliente da mesma organização.
 - `GET /deals` lista negociações com paginação, filtros (`stage`, `customerId`, `ownerId`, intervalo de datas) e ordenação (`sortBy` e `sortOrder`).
+- `PATCH /deals/:id/stage` concentra a mudança de estágio e exige `lostReason` para `CLOSED_LOST`.
+- `DELETE /deals/:id` remove negociações sem itens de produto.
 - Resposta paginada segue o formato `{ data: DealResponseDto[], meta: { page, limit, total, totalPages } }`.
+
+### Contatos
+
+- CRUD aninhado em `/customers/:customerId/contacts`.
+- Um contato pertence ao cliente e à organização; o contato primário é único por cliente.
+- Contatos com interações vinculadas não podem ser removidos.
+
+### Interações
+
+- CRUD aninhado em `/customers/:customerId/interactions`.
+- Listagem paginada com filtros por tipo, contato, usuário e intervalo de datas.
+- O contato opcional precisa pertencer ao mesmo cliente.
+
+### Tarefas
+
+- CRUD em `/tasks`, com vínculo obrigatório a cliente e opcional a negociação.
+- `PATCH /tasks/:id/status` controla `PENDING`, `COMPLETED` e `CANCELLED`, preenchendo `completedAt` ao concluir.
+- Filtro `overdue=true` retorna tarefas pendentes com `dueDate` anterior a hoje.
+- SALES e SUPPORT enxergam apenas tarefas atribuídas a eles.
+
+### Produtos e itens de negociação
+
+- Catálogo em `/products`; leitura para a organização, escrita restrita a OWNER/ADMIN/MANAGER.
+- Itens em `/deals/:dealId/products`, com quantidade, preço unitário e desconto.
+- O `totalPrice` é calculado no servidor e recalculado em toda atualização.
+- Produto usado por negociação não pode ser removido; negociação com itens não pode ser removida.
+
+### Dashboard
+
+- `GET /dashboard/summary` agrega clientes por status, negociações por estágio e valor, tarefas e interações.
+- OWNER/ADMIN/MANAGER veem a organização; SALES/SUPPORT veem apenas seus clientes, negócios e tarefas.
+
+### Equipe
+
+- `GET /users` lista usuários da organização para OWNER/ADMIN/MANAGER.
+- `POST /users` e `PATCH /users/:id` são restritos a OWNER/ADMIN.
+- `maxUsers` da organização é aplicado na criação.
+- O último OWNER ativo não pode ser desativado ou rebaixado.
 
 ### Guard global
 
 - `JwtAuthGuard` é registrado uma única vez como `APP_GUARD` em `AppModule`, aplicando autenticação a todas as rotas, exceto as marcadas com `@Public()` (cadastro, login, recuperação e redefinição de senha).
+- `RolesGuard` aplica `@Roles(...)` para restringir escrita de catálogo e gestão de equipe.
 
 ### Coleção HTTP
 
@@ -69,14 +110,20 @@ api-nuvora-crm/
 │   │   ├── auth.module.ts
 │   │   └── auth.service.ts
 │   ├── common/
-│   │   ├── decorators/    # Decorador para rotas públicas
-│   │   ├── guards/        # JwtAuthGuard
-│   │   └── utils/         # Geração de slug
+│   │   ├── decorators/    # @Public e @Roles
+│   │   ├── guards/        # JwtAuthGuard e RolesGuard
+│   │   └── utils/         # Slug, tenant-context e erros TypeORM
+│   ├── contacts/          # Contatos por cliente
 │   ├── customers/         # CRUD de clientes
+│   ├── dashboard/         # Agregações operacionais
+│   ├── deal-products/     # Itens de produto por negociação
 │   ├── deals/             # Negociações (paginação e filtros)
 │   ├── entity/            # Entidades TypeORM do domínio CRM
+│   ├── interactions/      # Histórico de interações por cliente
 │   ├── migration/         # Migrations TypeORM
-│   ├── users/             # Endpoint de perfil
+│   ├── products/          # Catálogo de produtos
+│   ├── tasks/             # Tarefas e lifecycle de status
+│   ├── users/             # Perfil e gestão de equipe
 │   ├── app.module.ts      # Composição de módulos e APP_GUARD
 │   ├── data-source.ts     # Data source usado pelas migrations
 │   └── main.ts            # Bootstrap Fastify, validação e Swagger
@@ -234,6 +281,73 @@ Todas as rotas exigem Bearer JWT, validado pela guard global.
 | `sortBy` | enum | Campo de ordenação (`value`, `createdAt`, `expectedCloseDate`); padrão `createdAt`. |
 | `sortOrder` | enum | Direção (`ASC`, `DESC`); padrão `DESC`. |
 
+### Contatos
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/customers/:customerId/contacts` | Cria um contato. |
+| `GET` | `/customers/:customerId/contacts` | Lista contatos do cliente. |
+| `GET` | `/customers/:customerId/contacts/:id` | Busca um contato. |
+| `PATCH` | `/customers/:customerId/contacts/:id` | Atualiza um contato. |
+| `DELETE` | `/customers/:customerId/contacts/:id` | Remove um contato sem interações. |
+
+### Interações
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/customers/:customerId/interactions` | Registra uma interação. |
+| `GET` | `/customers/:customerId/interactions` | Lista com paginação e filtros. |
+| `GET` | `/customers/:customerId/interactions/:id` | Busca uma interação. |
+| `PATCH` | `/customers/:customerId/interactions/:id` | Atualiza uma interação. |
+| `DELETE` | `/customers/:customerId/interactions/:id` | Remove uma interação. |
+
+### Tarefas
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/tasks` | Cria uma tarefa. |
+| `GET` | `/tasks` | Lista com filtros e paginação. |
+| `GET` | `/tasks/:id` | Busca uma tarefa. |
+| `PATCH` | `/tasks/:id` | Atualiza título, descrição, tipo, prioridade, prazo e responsável. |
+| `PATCH` | `/tasks/:id/status` | Atualiza o status e `completedAt`. |
+| `DELETE` | `/tasks/:id` | Remove uma tarefa. |
+
+`GET /tasks` aceita `status`, `priority`, `type`, `customerId`, `dealId`, `userId`, `overdue`, `page`, `limit`, `sortBy` e `sortOrder`.
+
+### Produtos
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/products` | Cria produto; OWNER/ADMIN/MANAGER. |
+| `GET` | `/products` | Lista produtos; filtros `search`, `category`, `isActive`. |
+| `GET` | `/products/:id` | Busca um produto. |
+| `PATCH` | `/products/:id` | Atualiza produto; OWNER/ADMIN/MANAGER. |
+| `DELETE` | `/products/:id` | Remove produto sem uso; OWNER/ADMIN/MANAGER. |
+
+### Itens de negociação
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/deals/:dealId/products` | Lista itens da negociação. |
+| `POST` | `/deals/:dealId/products` | Adiciona produto; preço padrão vem do catálogo. |
+| `PATCH` | `/deals/:dealId/products/:id` | Atualiza quantidade, preço ou desconto. |
+| `DELETE` | `/deals/:dealId/products/:id` | Remove o item. |
+
+### Dashboard
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/dashboard/summary` | Agrega clientes, negócios, tarefas e interações. |
+
+### Equipe
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/users` | Lista usuários da organização; OWNER/ADMIN/MANAGER. |
+| `POST` | `/users` | Cria usuário; OWNER/ADMIN; respeita `maxUsers`. |
+| `GET` | `/users/:id` | Busca usuário da organização; OWNER/ADMIN/MANAGER. |
+| `PATCH` | `/users/:id` | Atualiza nome, papel, avatar ou `isActive`; OWNER/ADMIN. |
+
 ### Saúde
 
 | Método | Rota | Autenticação | Descrição |
@@ -283,13 +397,11 @@ set -gx BASE "http://localhost:3001"
 
 ### Limitações e TODOs verificados
 
-- O arquivo `.env-example` não cobre `SECRET_KEY`, `FRONTEND_URI` e as variáveis SMTP; o ambiente local precisa adicioná-las.
-- `GET /deals/:id`, `PATCH /deals/:id` e `DELETE /deals/:id` permanecem como stubs que retornam apenas o id recebido; precisam ser implementados.
-- `GET /users/me` continua dependendo da evolução do serviço de usuários.
-- A autorização por papel já tem `RolesWithFullAccess` referenciado, mas ainda não restringe clientes ou negociações.
-- Tarefas, interações e dashboard existem como entidades, mas não têm controllers nem rotas publicadas.
-- Integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial permanecem fora do escopo inicial.
+- `maxUsers` é aplicado na criação de usuários, mas upgrade de plano/billing ainda não tem rota.
+- Não há convite por e-mail, troca de senha pelo próprio usuário nem recuperação de senha com tela própria.
+- Negociação com itens não pode ser removida; remova os itens primeiro.
+- Integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial permanecem fora do escopo atual.
 
 ## Roadmap
 
-Evoluções futuras podem incluir: autorização por papel em clientes e negociações, módulos de tarefas, interações e dashboard com isolamento por organização, DTOs validados em todos os fluxos, seed inicial, suíte de testes automatizados, upload de anexos e integrações externas.
+Evoluções futuras podem incluir: gestão de planos/billing, convites e troca de senha, seed inicial, upload de anexos, notificações em tempo real, integrações externas e execução dos testes E2E em CI.
