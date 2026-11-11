@@ -12,10 +12,7 @@ import { Not, Repository } from "typeorm";
 import { CustomerResponseDto } from "./dto/customer-response.dto";
 import { isUUID } from "class-validator";
 import { isUniqueViolation } from "src/common/utils/typeorm-errors";
-import {
-  ROLES_WITH_FULL_ACCESS,
-  TenantContext,
-} from "src/common/utils/tenant-context";
+import { hasFullAccess, TenantContext } from "src/common/utils/tenant-context";
 
 @Injectable()
 export class CustomersService {
@@ -86,18 +83,22 @@ export class CustomersService {
   }
 
   async findAll({
+    ownerId,
     organizationId,
+    role,
   }: TenantContext): Promise<CustomerResponseDto[]> {
     const messageMissingToken =
       "Missing required data in token or request body";
 
-    if (!organizationId || !isUUID(organizationId, "4")) {
+    if (!ownerId || !organizationId || !isUUID(organizationId, "4")) {
       throw new UnauthorizedException(messageMissingToken);
     }
 
-    const customers = await this.customerRepo.find({
-      where: { organizationId },
-    });
+    const where = hasFullAccess(role)
+      ? { organizationId }
+      : { organizationId, ownerId };
+
+    const customers = await this.customerRepo.find({ where });
 
     if (customers.length === 0) {
       return [];
@@ -118,7 +119,7 @@ export class CustomersService {
       throw new UnauthorizedException(messageMissingToken);
     }
 
-    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+    const where = hasFullAccess(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -142,7 +143,7 @@ export class CustomersService {
     const conflictMessage =
       "A customer with this CNPJ already exists in this organization";
 
-    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+    const where = hasFullAccess(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -206,7 +207,7 @@ export class CustomersService {
   ): Promise<void> {
     const message = "Customer not found";
 
-    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+    const where = hasFullAccess(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
