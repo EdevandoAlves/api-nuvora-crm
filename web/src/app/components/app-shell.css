@@ -1272,3 +1272,45 @@
     grid-template-columns: repeat(5, 220px);
   }
 }
+
+.toolbar-chip {
+  height: var(--control);
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.toolbar-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.toolbar-chip:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.task-toggle {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--surface);
+}
+
+.task-toggle.is-done {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.is-overdue {
+  color: var(--danger) !important;
+}

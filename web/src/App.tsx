@@ -14,6 +14,7 @@ import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
 import { CustomersPage } from "./app/pages/CustomersPage";
 import { DealsPage } from "./app/pages/DealsPage";
 import { PlaceholderPage } from "./app/pages/PlaceholderPage";
+import { TasksPage } from "./app/pages/TasksPage";
 
 function FullPageLoader() {
   return (
@@ -56,15 +57,7 @@ export default function App() {
               <Route path="/clientes" element={<CustomersPage />} />
               <Route path="/clientes/:id" element={<CustomerDetailPage />} />
               <Route path="/negocios" element={<DealsPage />} />
-              <Route
-                path="/tarefas"
-                element={
-                  <PlaceholderPage
-                    title="Tarefas"
-                    description="Agenda, prioridades e conclusão de tarefas."
-                  />
-                }
-              />
+              <Route path="/tarefas" element={<TasksPage />} />
               <Route
                 path="/contatos"
                 element={
