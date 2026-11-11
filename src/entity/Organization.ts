@@ -56,7 +56,10 @@ export class Organization {
   ownerId: string;
 
   @ManyToOne(() => User, { onDelete: "SET NULL" })
-  @JoinColumn({ name: "ownerId" })
+  @JoinColumn({
+    name: "ownerId",
+    foreignKeyConstraintName: "FK_organization_owner",
+  })
   owner: User;
 
   @CreateDateColumn()
