@@ -8,6 +8,7 @@ import request from "supertest";
 import { DataSource } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { AppModule } from "../src/app.module";
+import { Organization } from "../src/entity/Organization";
 import { User, UserRole } from "../src/entity/User";
 
 type Credentials = {
@@ -791,5 +792,84 @@ describe("Nuvora CRM API (e2e)", () => {
     expect(own.body.deals.total).toBe(0);
     expect(own.body.deals.pipelineValue).toBe(0);
     expect(sales.id).toBeDefined();
+  });
+
+  it("manages organization users and enforces limits", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    const initial = await request(server)
+      .get("/users")
+      .set(auth(owner.token))
+      .expect(200);
+    expect(initial.body).toHaveLength(1);
+
+    await request(server)
+      .post("/users")
+      .set(auth(owner.token))
+      .send({
+        email: "new-user@example.com",
+        password: "Senha123!",
+        firstName: "New",
+        lastName: "User",
+        role: "SALES",
+      })
+      .expect(400);
+
+    await dataSource
+      .getRepository(Organization)
+      .update({ id: me.body.organizationId }, { maxUsers: 10 });
+
+    const created = await request(server)
+      .post("/users")
+      .set(auth(owner.token))
+      .send({
+        email: "new-user@example.com",
+        password: "Senha123!",
+        firstName: "New",
+        lastName: "User",
+        role: "SALES",
+      })
+      .expect(201);
+    expect(created.body.password).toBeUndefined();
+    expect(created.body.email).toBe("new-user@example.com");
+
+    const salesToken = await login("new-user@example.com", "Senha123!");
+
+    await request(server).get("/users").set(auth(salesToken)).expect(403);
+
+    await request(server)
+      .post("/users")
+      .set(auth(salesToken))
+      .send({
+        email: "blocked@example.com",
+        password: "Senha123!",
+        firstName: "Blocked",
+        lastName: "User",
+        role: "SALES",
+      })
+      .expect(403);
+
+    const updated = await request(server)
+      .patch(`/users/${created.body.id}`)
+      .set(auth(owner.token))
+      .send({ role: "MANAGER" })
+      .expect(200);
+    expect(updated.body.role).toBe("MANAGER");
+
+    await request(server)
+      .patch(`/users/${me.body.id}`)
+      .set(auth(owner.token))
+      .send({ isActive: false })
+      .expect(400);
+
+    await request(server)
+      .patch(`/users/${me.body.id}`)
+      .set(auth(owner.token))
+      .send({ role: "ADMIN" })
+      .expect(400);
   });
 });
