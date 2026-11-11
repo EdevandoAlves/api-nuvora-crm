@@ -14,7 +14,9 @@ import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
 import { CustomersPage } from "./app/pages/CustomersPage";
 import { DealsPage } from "./app/pages/DealsPage";
 import { PlaceholderPage } from "./app/pages/PlaceholderPage";
+import { ProductsPage } from "./app/pages/ProductsPage";
 import { TasksPage } from "./app/pages/TasksPage";
+import { TeamPage } from "./app/pages/TeamPage";
 
 function FullPageLoader() {
   return (
@@ -67,24 +69,8 @@ export default function App() {
                   />
                 }
               />
-              <Route
-                path="/produtos"
-                element={
-                  <PlaceholderPage
-                    title="Produtos"
-                    description="Catálogo, preços e itens de negociação."
-                  />
-                }
-              />
-              <Route
-                path="/equipe"
-                element={
-                  <PlaceholderPage
-                    title="Equipe"
-                    description="Usuários, papéis e limites da organização."
-                  />
-                }
-              />
+              <Route path="/produtos" element={<ProductsPage />} />
+              <Route path="/equipe" element={<TeamPage />} />
             </Route>
           </Route>
 
