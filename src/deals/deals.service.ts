@@ -7,10 +7,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { CreateDealDto } from "./dto/create-deal.dto";
 import { UpdateDealDto } from "./dto/update-deal.dto";
-import {
-  ROLES_WITH_FULL_ACCESS,
-  TenantContext,
-} from "src/common/utils/tenant-context";
+import { hasFullAccess, TenantContext } from "src/common/utils/tenant-context";
 import { Customer } from "src/entity/Customer";
 import {
   Between,
@@ -95,7 +92,7 @@ export class DealsService {
   }
 
   async findAll(
-    { ownerId, organizationId }: TenantContext,
+    { ownerId, organizationId, role }: TenantContext,
     query: QueryDealDTO,
   ): Promise<PaginatedDealResponseDTO> {
     const unauthorizedMessage = "Unauthorized";
@@ -112,7 +109,9 @@ export class DealsService {
     if (query.customerId) {
       where.customerId = query.customerId;
     }
-    if (query.ownerId) {
+    if (!hasFullAccess(role)) {
+      where.ownerId = ownerId;
+    } else if (query.ownerId) {
       where.ownerId = query.ownerId;
     }
     if (query.startDate && query.endDate) {
@@ -152,7 +151,7 @@ export class DealsService {
 
   async findOne(
     id: string,
-    { ownerId, organizationId }: TenantContext,
+    { ownerId, organizationId, role }: TenantContext,
   ): Promise<DealResponseDto> {
     const invalidMessage = "Invalid credentials";
     const message = "Deal not found";
@@ -161,7 +160,11 @@ export class DealsService {
       throw new UnauthorizedException(invalidMessage);
     }
 
-    const deal = await this.dealRepo.findOne({ where: { id, organizationId } });
+    const where = hasFullAccess(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const deal = await this.dealRepo.findOne({ where });
 
     if (!deal) {
       throw new NotFoundException(message);
@@ -183,7 +186,7 @@ export class DealsService {
       throw new UnauthorizedException(unauthorizedMessage);
     }
 
-    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+    const where = hasFullAccess(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -238,7 +241,7 @@ export class DealsService {
       throw new UnauthorizedException(unauthorizedMessage);
     }
 
-    const where = ROLES_WITH_FULL_ACCESS.includes(role)
+    const where = hasFullAccess(role)
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
@@ -248,25 +251,52 @@ export class DealsService {
       throw new NotFoundException(message);
     }
 
-    if (
-      updateStageDealDto.stage === DealStage.CLOSED_LOST &&
-      !updateStageDealDto.lostReason?.trim()
-    ) {
-      throw new BadRequestException(BadRequestMessage);
+    const isClosing = [DealStage.CLOSED_WON, DealStage.CLOSED_LOST].includes(
+      updateStageDealDto.stage,
+    );
+
+    if (updateStageDealDto.stage === DealStage.CLOSED_LOST) {
+      if (!updateStageDealDto.lostReason?.trim()) {
+        throw new BadRequestException(BadRequestMessage);
+      }
+      deal.lostReason = updateStageDealDto.lostReason.trim();
+    } else {
+      deal.lostReason = null;
     }
 
     deal.stage = updateStageDealDto.stage;
-    if (updateStageDealDto.lostReason !== undefined) {
-      deal.lostReason = updateStageDealDto.lostReason;
+    if (isClosing) {
+      deal.closedAt = deal.closedAt ?? new Date();
+    } else {
+      deal.closedAt = null;
     }
-    deal.closedAt = [DealStage.CLOSED_WON, DealStage.CLOSED_LOST].includes(
-      updateStageDealDto.stage,
-    )
-      ? new Date()
-      : null;
 
     await this.dealRepo.save(deal);
 
     return this.toResponseDto(deal);
+  }
+
+  async remove(
+    id: string,
+    { ownerId, organizationId, role }: TenantContext,
+  ): Promise<void> {
+    const unauthorizedMessage = "Unauthorized";
+    const message = "Deal not found";
+
+    if (!ownerId || !organizationId) {
+      throw new UnauthorizedException(unauthorizedMessage);
+    }
+
+    const where = hasFullAccess(role)
+      ? { id, organizationId }
+      : { id, organizationId, ownerId };
+
+    const deal = await this.dealRepo.findOne({ where });
+
+    if (!deal) {
+      throw new NotFoundException(message);
+    }
+
+    await this.dealRepo.remove(deal);
   }
 }

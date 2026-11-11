@@ -4,13 +4,17 @@ import {
   Post,
   Body,
   Patch,
+  Delete,
   Param,
   Req,
   Query,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -102,6 +106,22 @@ export class DealsController {
     @Req() request: AuthRequest,
   ): Promise<DealResponseDto> {
     return this.dealsService.updateStage(id, updateStageDealDto, {
+      ownerId: request.user!.id,
+      organizationId: request.user!.organization,
+      role: request.user!.role,
+    });
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Remove a deal" })
+  @ApiParam({ name: "id", format: "uuid" })
+  @ApiNoContentResponse({ description: "Deal removed" })
+  remove(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() request: AuthRequest,
+  ): Promise<void> {
+    return this.dealsService.remove(id, {
       ownerId: request.user!.id,
       organizationId: request.user!.organization,
       role: request.user!.role,
