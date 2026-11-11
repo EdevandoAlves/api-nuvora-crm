@@ -15,6 +15,9 @@ export class DashboardDealSummaryDto {
   @ApiProperty({ type: "object", additionalProperties: { type: "number" } })
   byStage: Record<string, number>;
 
+  @ApiProperty({ type: "object", additionalProperties: { type: "number" } })
+  valueByStage: Record<string, number>;
+
   @ApiProperty()
   pipelineValue: number;
 

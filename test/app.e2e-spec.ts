@@ -504,6 +504,7 @@ describe("Nuvora CRM API (e2e)", () => {
     });
     expect(task.status).toBe("PENDING");
     expect(task.dealId).toBe(deal.id);
+    expect(task.customerName).toBe("Cliente Tarefas");
 
     const list = await request(server)
       .get("/tasks")
@@ -747,12 +748,56 @@ describe("Nuvora CRM API (e2e)", () => {
     expect(response.body.deals.total).toBe(2);
     expect(response.body.deals.byStage[deal.stage]).toBe(1);
     expect(response.body.deals.byStage.CLOSED_WON).toBe(1);
+    expect(response.body.deals.valueByStage[deal.stage]).toBe(1000);
+    expect(response.body.deals.valueByStage.CLOSED_WON).toBe(1000);
     expect(response.body.deals.pipelineValue).toBe(1000);
     expect(response.body.deals.wonValue).toBe(1000);
     expect(response.body.tasks.pending).toBe(2);
     expect(response.body.tasks.overdue).toBe(1);
     expect(response.body.interactions.total).toBe(1);
     expect(response.body.interactions.last30Days).toBe(1);
+  });
+
+  it("returns dashboard activity and weekly trend", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Atividade");
+
+    const wonDeal = await createDeal(owner.token, customer.id, "Deal Ganho");
+    await request(server)
+      .patch(`/deals/${wonDeal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_WON" })
+      .expect(200);
+
+    const lostDeal = await createDeal(owner.token, customer.id, "Deal Perdido");
+    await request(server)
+      .patch(`/deals/${lostDeal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_LOST", lostReason: "Preço" })
+      .expect(200);
+
+    await createInteraction(owner.token, customer.id, {
+      subject: "Ligação de retorno",
+      description: "Cliente pediu proposta revisada",
+    });
+
+    const activity = await request(server)
+      .get("/dashboard/activity")
+      .query({ limit: 5 })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(activity.body).toHaveLength(1);
+    expect(activity.body[0].customer.companyName).toBe("Cliente Atividade");
+    expect(activity.body[0].user.firstName).toBe("Owner");
+
+    const trend = await request(server)
+      .get("/dashboard/trend")
+      .query({ weeks: 4 })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(trend.body).toHaveLength(4);
+    expect(trend.body[3].won).toBe(1000);
+    expect(trend.body[3].lost).toBe(1000);
   });
 
   it("scopes the dashboard by owner", async () => {

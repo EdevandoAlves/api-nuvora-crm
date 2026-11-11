@@ -15,6 +15,9 @@ export class TaskResponseDto {
   customerId: string;
 
   @ApiPropertyOptional({ nullable: true })
+  customerName: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
   dealId: string | null;
 
   @ApiProperty()

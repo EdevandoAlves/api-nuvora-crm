@@ -84,7 +84,10 @@ export class TasksService {
       ? { id, organizationId }
       : { id, organizationId, userId: ownerId };
 
-    const task = await this.taskRepo.findOne({ where });
+    const task = await this.taskRepo.findOne({
+      where,
+      relations: { customer: true },
+    });
     if (!task) {
       throw new NotFoundException("Task not found");
     }
@@ -97,6 +100,7 @@ export class TasksService {
       organizationId: task.organizationId,
       userId: task.userId,
       customerId: task.customerId,
+      customerName: task.customer?.companyName ?? null,
       dealId: task.dealId ?? null,
       title: task.title,
       description: task.description ?? null,
@@ -143,6 +147,7 @@ export class TasksService {
     });
 
     await this.taskRepo.save(task);
+    task.customer = customer;
     return this.toResponseDto(task);
   }
 
@@ -175,6 +180,7 @@ export class TasksService {
     const limit = query.limit ?? 20;
     const [tasks, total] = await this.taskRepo.findAndCount({
       where,
+      relations: { customer: true },
       skip: (page - 1) * limit,
       take: limit,
       order: { [query.sortBy ?? "dueDate"]: query.sortOrder ?? "ASC" },
