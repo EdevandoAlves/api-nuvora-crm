@@ -1,0 +1,272 @@
+import { ValidationPipe } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from "@nestjs/platform-fastify";
+import request from "supertest";
+import { DataSource } from "typeorm";
+import * as bcrypt from "bcrypt";
+import { AppModule } from "../src/app.module";
+import { User, UserRole } from "../src/entity/User";
+
+type Credentials = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  cnpj: string;
+};
+
+const ownerCredentials: Credentials = {
+  email: "owner@example.com",
+  password: "Senha123!",
+  firstName: "Owner",
+  lastName: "Test",
+  companyName: "Nuvora Test",
+  cnpj: "12345678901234",
+};
+
+describe("Nuvora CRM API (e2e)", () => {
+  let app: NestFastifyApplication;
+  let server: unknown;
+  let dataSource: DataSource;
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+    await app.init();
+    await app.getHttpAdapter().getInstance().ready();
+
+    server = app.getHttpServer();
+    dataSource = app.get(DataSource);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(async () => {
+    await dataSource.query(
+      `TRUNCATE TABLE "deal_product", "task", "interaction", "contact", "deal", "customer", "user", "organization" RESTART IDENTITY CASCADE`,
+    );
+  });
+
+  function auth(token: string) {
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  async function register(overrides: Partial<Credentials> = {}) {
+    const body = { ...ownerCredentials, ...overrides };
+    await request(server)
+      .post("/auth/register")
+      .send(body)
+      .expect(201);
+
+    const login = await request(server)
+      .post("/auth/login")
+      .send({ email: body.email, password: body.password })
+      .expect(201);
+
+    return { token: login.body.accessToken as string, body };
+  }
+
+  async function createSalesUser(organizationId: string) {
+    const repo = dataSource.getRepository(User);
+    const user = repo.create({
+      organizationId,
+      email: "sales@example.com",
+      password: await bcrypt.hash("Senha123!", 10),
+      firstName: "Sales",
+      lastName: "Test",
+      role: UserRole.SALES,
+      isActive: true,
+    });
+    return repo.save(user);
+  }
+
+  async function login(email: string, password: string) {
+    const response = await request(server)
+      .post("/auth/login")
+      .send({ email, password })
+      .expect(201);
+    return response.body.accessToken as string;
+  }
+
+  async function createCustomer(token: string, companyName: string) {
+    const response = await request(server)
+      .post("/customers")
+      .set(auth(token))
+      .send({ companyName })
+      .expect(201);
+    return response.body;
+  }
+
+  async function createDeal(
+    token: string,
+    customerId: string,
+    title = "Deal Test",
+  ) {
+    const response = await request(server)
+      .post("/deals")
+      .set(auth(token))
+      .send({ customerId, title, value: 1000 })
+      .expect(201);
+    return response.body;
+  }
+
+  it("returns the authenticated user profile without credentials", async () => {
+    const owner = await register();
+
+    const response = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      email: owner.body.email,
+      role: UserRole.OWNER,
+      organization: { name: owner.body.companyName },
+    });
+    expect(response.body.id).toBeDefined();
+    expect(response.body.password).toBeUndefined();
+    expect(response.body.resetToken).toBeUndefined();
+    expect(response.body.organization.cnpj).toBe(owner.body.cnpj);
+  });
+
+  it("keeps stage changes on the dedicated endpoint", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Stage");
+    const deal = await createDeal(owner.token, customer.id);
+
+    await request(server)
+      .patch(`/deals/${deal.id}`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_WON" })
+      .expect(400);
+
+    const won = await request(server)
+      .patch(`/deals/${deal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_WON" })
+      .expect(200);
+    expect(won.body.stage).toBe("CLOSED_WON");
+    expect(won.body.closedAt).toBeTruthy();
+    expect(won.body.lostReason).toBeNull();
+
+    await request(server)
+      .patch(`/deals/${deal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_LOST" })
+      .expect(400);
+
+    const lost = await request(server)
+      .patch(`/deals/${deal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_LOST", lostReason: "Preço" })
+      .expect(200);
+    expect(lost.body.lostReason).toBe("Preço");
+
+    const reopened = await request(server)
+      .patch(`/deals/${deal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "NEGOTIATION" })
+      .expect(200);
+    expect(reopened.body.closedAt).toBeNull();
+    expect(reopened.body.lostReason).toBeNull();
+  });
+
+  it("removes a deal", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Delete");
+    const deal = await createDeal(owner.token, customer.id);
+
+    await request(server)
+      .delete(`/deals/${deal.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    await request(server)
+      .get(`/deals/${deal.id}`)
+      .set(auth(owner.token))
+      .expect(404);
+  });
+
+  it("scopes customers and deals by owner for non-management roles", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+    const salesCustomer = await createCustomer(salesToken, "Cliente Sales");
+
+    const salesCustomers = await request(server)
+      .get("/customers")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(salesCustomers.body.map((customer) => customer.id)).toEqual([
+      salesCustomer.id,
+    ]);
+
+    await request(server)
+      .get(`/customers/${ownerCustomer.id}`)
+      .set(auth(salesToken))
+      .expect(404);
+
+    const ownerDeal = await createDeal(
+      owner.token,
+      ownerCustomer.id,
+      "Deal Owner",
+    );
+
+    await request(server)
+      .get(`/deals/${ownerDeal.id}`)
+      .set(auth(salesToken))
+      .expect(404);
+
+    const emptySalesDeals = await request(server)
+      .get("/deals")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(emptySalesDeals.body.data).toHaveLength(0);
+    expect(emptySalesDeals.body.meta.total).toBe(0);
+
+    const salesDeal = await createDeal(
+      salesToken,
+      salesCustomer.id,
+      "Deal Sales",
+    );
+
+    const salesDeals = await request(server)
+      .get("/deals")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(salesDeals.body.data.map((deal) => deal.id)).toEqual([
+      salesDeal.id,
+    ]);
+
+    const ownerDeals = await request(server)
+      .get("/deals")
+      .set(auth(owner.token))
+      .expect(200);
+    expect(ownerDeals.body.data).toHaveLength(2);
+  });
+});
