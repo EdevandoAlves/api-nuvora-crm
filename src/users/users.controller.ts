@@ -2,21 +2,25 @@ import { Controller, Get, Req } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import {
   ApiBearerAuth,
+  ApiOkResponse,
   ApiOperation,
-  ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import type { AuthRequest } from "src/common/guards/jwt-auth.guard";
+import { MeResponseDto } from "./dto/me-response.dto";
 
 @ApiTags("Users")
+@ApiBearerAuth()
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get("me")
-  @ApiBearerAuth()
   @ApiOperation({ summary: "Get the authenticated user" })
-  @ApiResponse({ status: 200, schema: { type: "string" } })
-  findOne(@Req() request) {
+  @ApiOkResponse({ type: MeResponseDto })
+  @ApiUnauthorizedResponse({ description: "Missing or invalid JWT" })
+  findOne(@Req() request: AuthRequest): Promise<MeResponseDto> {
     return this.usersService.getMe(request);
   }
 }
