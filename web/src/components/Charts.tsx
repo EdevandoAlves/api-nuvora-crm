@@ -3,9 +3,11 @@ type TrendPoint = { label: string; won: number; lost: number };
 export function TrendChart({
   data,
   height = 208,
+  formatY,
 }: {
   data: TrendPoint[];
   height?: number;
+  formatY?: (value: number) => string;
 }) {
   const width = 680;
   const margin = { top: 12, right: 10, bottom: 24, left: 38 };
@@ -64,7 +66,9 @@ export function TrendChart({
           fontFamily="var(--font-mono)"
           fontSize="10"
         >
-          {Math.round(max * (1 - step))}k
+          {formatY
+            ? formatY(max * (1 - step))
+            : `${Math.round(max * (1 - step))}k`}
         </text>
       ))}
       <path d={area} fill="var(--success-soft)" opacity="0.7" />

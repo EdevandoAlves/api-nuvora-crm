@@ -24,8 +24,7 @@ import {
 } from "../data";
 import { Donut, TrendChart } from "../components/Charts";
 import { Rail } from "../components/Rail";
-import "./ProposalB.css";
-import "./ProposalB.css";
+import "../styles/briefing.css";
 
 const activityIcons = {
   deal: BriefcaseBusiness,
