@@ -18,8 +18,13 @@ Use uma conta existente ou crie uma organização em `/register`.
 ## Rotas
 
 - `/login` e `/register` — autenticação.
-- `/dashboard` — dashboard Briefing conectado à API.
-- `/clientes`, `/negocios`, `/tarefas`, `/contatos`, `/produtos`, `/equipe` — módulos com a API pronta, aguardando a próxima etapa do frontend.
+- `/dashboard` — resumo operacional com caixa, pipeline, tarefas e atividade.
+- `/clientes` e `/clientes/:id` — carteira, cadastro, contatos, interações e histórico.
+- `/negocios` — pipeline kanban/tabela, criação, edição, estágio e itens.
+- `/tarefas` — filtros, criação, edição, conclusão e atraso.
+- `/contatos` — diretório global de contatos.
+- `/produtos` — catálogo com escrita restrita a Owner/Admin/Manager.
+- `/equipe` — usuários, papéis e ativação; gestão restrita a Owner/Admin.
 
 ## Scripts
 
@@ -31,4 +36,4 @@ npm run preview
 
 ## Propostas
 
-As propostas A (Console) e C (Atlas) continuam em `src/proposals/` apenas como referência de direção visual. O app em produção usa a proposta B.
+As propostas A (Console) e C (Atlas) continuam em `src/proposals/` apenas como referência de direção visual. O app usa a proposta B.

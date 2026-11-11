@@ -14,7 +14,9 @@ npm install
 npm run dev
 ```
 
-O Vite faz proxy de `/api` para a API local em `http://127.0.0.1:3000`. Use `/login` ou `/register`; o dashboard fica em `/dashboard`. As rotas de clientes, negócios, tarefas, contatos, produtos e equipe já têm a API pronta e serão conectadas nas próximas etapas.
+O Vite faz proxy de `/api` para a API local em `http://127.0.0.1:3000`. Use `/login` ou `/register`.
+
+Rotas implementadas: `/dashboard`, `/clientes`, `/clientes/:id`, `/negocios`, `/tarefas`, `/contatos`, `/produtos` e `/equipe`. O produto visual está em `PRODUCT.md` e o sistema de design em `DESIGN.md`.
 
 As propostas A (Console) e C (Atlas) permanecem em `src/proposals/` apenas como referência visual.
 
