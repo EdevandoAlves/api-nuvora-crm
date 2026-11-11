@@ -25,6 +25,7 @@ import { InteractionsModule } from "./interactions/interactions.module";
 import { TasksModule } from "./tasks/tasks.module";
 import { ProductsModule } from "./products/products.module";
 import { DealProductsModule } from "./deal-products/deal-products.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 
 @Module({
   controllers: [AppController],
@@ -80,6 +81,7 @@ import { DealProductsModule } from "./deal-products/deal-products.module";
     TasksModule,
     ProductsModule,
     DealProductsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

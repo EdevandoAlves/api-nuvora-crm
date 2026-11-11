@@ -715,4 +715,81 @@ describe("Nuvora CRM API (e2e)", () => {
       .set(auth(salesToken))
       .expect(404);
   });
+
+  it("summarizes the organization dashboard", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Dashboard");
+    const wonCustomer = await createCustomer(owner.token, "Cliente Ganho");
+    const deal = await createDeal(owner.token, customer.id, "Deal Aberto");
+    const wonDeal = await createDeal(owner.token, wonCustomer.id, "Deal Ganho");
+
+    await request(server)
+      .patch(`/deals/${wonDeal.id}/stage`)
+      .set(auth(owner.token))
+      .send({ stage: "CLOSED_WON" })
+      .expect(200);
+
+    await createTask(owner.token, customer.id);
+    const yesterday = new Date(Date.now() - 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    await createTask(owner.token, customer.id, { dueDate: yesterday });
+    await createInteraction(owner.token, customer.id);
+
+    const response = await request(server)
+      .get("/dashboard/summary")
+      .set(auth(owner.token))
+      .expect(200);
+
+    expect(response.body.customers.total).toBe(2);
+    expect(response.body.customers.byStatus.LEAD).toBe(2);
+    expect(response.body.deals.total).toBe(2);
+    expect(response.body.deals.byStage[deal.stage]).toBe(1);
+    expect(response.body.deals.byStage.CLOSED_WON).toBe(1);
+    expect(response.body.deals.pipelineValue).toBe(1000);
+    expect(response.body.deals.wonValue).toBe(1000);
+    expect(response.body.tasks.pending).toBe(2);
+    expect(response.body.tasks.overdue).toBe(1);
+    expect(response.body.interactions.total).toBe(1);
+    expect(response.body.interactions.last30Days).toBe(1);
+  });
+
+  it("scopes the dashboard by owner", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    const sales = await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+    await createDeal(owner.token, ownerCustomer.id, "Deal Owner");
+    await createTask(owner.token, ownerCustomer.id);
+    await createInteraction(owner.token, ownerCustomer.id);
+
+    const empty = await request(server)
+      .get("/dashboard/summary")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(empty.body.customers.total).toBe(0);
+    expect(empty.body.deals.total).toBe(0);
+    expect(empty.body.tasks.pending).toBe(0);
+    expect(empty.body.interactions.total).toBe(0);
+
+    const salesCustomer = await createCustomer(salesToken, "Cliente Sales");
+    await createTask(salesToken, salesCustomer.id);
+    await createInteraction(salesToken, salesCustomer.id);
+
+    const own = await request(server)
+      .get("/dashboard/summary")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(own.body.customers.total).toBe(1);
+    expect(own.body.tasks.pending).toBe(1);
+    expect(own.body.interactions.total).toBe(1);
+    expect(own.body.deals.total).toBe(0);
+    expect(own.body.deals.pipelineValue).toBe(0);
+    expect(sales.id).toBeDefined();
+  });
 });
