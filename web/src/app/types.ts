@@ -23,11 +23,7 @@ export type Me = {
 };
 
 export type DealStage =
-  | "QUALIFICATION"
-  | "PROPOSAL"
-  | "NEGOTIATION"
-  | "CLOSED_WON"
-  | "CLOSED_LOST";
+  "QUALIFICATION" | "PROPOSAL" | "NEGOTIATION" | "CLOSED_WON" | "CLOSED_LOST";
 
 export type DashboardSummary = {
   customers: {
@@ -73,12 +69,7 @@ export type DashboardTrendPoint = {
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 export type TaskStatus = "PENDING" | "COMPLETED" | "CANCELLED";
 export type TaskType =
-  | "CALL"
-  | "EMAIL"
-  | "FOLLOW_UP"
-  | "DEMO"
-  | "PROPOSAL"
-  | "MEETING";
+  "CALL" | "EMAIL" | "FOLLOW_UP" | "DEMO" | "PROPOSAL" | "MEETING";
 
 export type Task = {
   id: string;
@@ -148,6 +139,7 @@ export type Contact = {
   id: string;
   organizationId: string;
   customerId: string;
+  customerName: string | null;
   firstName: string;
   lastName: string;
   email: string | null;
@@ -161,12 +153,7 @@ export type Contact = {
 };
 
 export type InteractionType =
-  | "EMAIL"
-  | "CALL"
-  | "MEETING"
-  | "NOTE"
-  | "TASK"
-  | "WHATSAPP";
+  "EMAIL" | "CALL" | "MEETING" | "NOTE" | "TASK" | "WHATSAPP";
 
 export type Interaction = {
   id: string;

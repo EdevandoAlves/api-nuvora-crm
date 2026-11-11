@@ -11,9 +11,9 @@ import { AppShell } from "./app/components/AppShell";
 import { DashboardPage } from "./app/pages/DashboardPage";
 import { LoginPage, RegisterPage } from "./app/pages/AuthPages";
 import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
+import { ContactsPage } from "./app/pages/ContactsPage";
 import { CustomersPage } from "./app/pages/CustomersPage";
 import { DealsPage } from "./app/pages/DealsPage";
-import { PlaceholderPage } from "./app/pages/PlaceholderPage";
 import { ProductsPage } from "./app/pages/ProductsPage";
 import { TasksPage } from "./app/pages/TasksPage";
 import { TeamPage } from "./app/pages/TeamPage";
@@ -60,15 +60,7 @@ export default function App() {
               <Route path="/clientes/:id" element={<CustomerDetailPage />} />
               <Route path="/negocios" element={<DealsPage />} />
               <Route path="/tarefas" element={<TasksPage />} />
-              <Route
-                path="/contatos"
-                element={
-                  <PlaceholderPage
-                    title="Contatos"
-                    description="Pessoas por cliente e histórico de interações."
-                  />
-                }
-              />
+              <Route path="/contatos" element={<ContactsPage />} />
               <Route path="/produtos" element={<ProductsPage />} />
               <Route path="/equipe" element={<TeamPage />} />
             </Route>
