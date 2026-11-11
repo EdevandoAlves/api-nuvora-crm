@@ -1,12 +1,171 @@
-# API CRM Nuvora
+# Nuvora CRM
 
-API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação, isolamento por organização e uma base preparada para evoluir regras de negócio. Não é apresentada como um CRM SaaS completo.
+**CRM operacional full-stack para portfólio.** Uma API REST multi-tenant em NestJS e uma SPA em React/TypeScript com uma interface Precision UI compacta, keyboard-first e orientada a dados.
 
-> **Status atual:** a API expõe autenticação, perfil, clientes, contatos, interações, tarefas, negociações, catálogo de produtos, itens de negociação, dashboard operacional e gestão de equipe. Planos/billing, anexos e integrações externas permanecem fora do escopo atual.
+<p>
+  <img alt="NestJS" src="https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white">
+</p>
 
-## Frontend
+<p align="center">
+  <img src="docs/screenshots/dashboard.webp" alt="Dashboard operacional do Nuvora CRM com pipeline, tarefas, atividade e saúde da carteira" width="100%">
+</p>
 
-O diretório `web/` contém o app **React + TypeScript + Vite** na direção **Briefing**: dashboard operacional compacto, editorial e keyboard-first.
+## Sobre o projeto
+
+O Nuvora CRM é um projeto de portfólio que cobre o ciclo comercial de uma pequena ou média empresa: cadastro de organização e usuários, clientes, contatos, interações, tarefas, negociações com itens, catálogo de produtos e um dashboard operacional.
+
+O frontend **não usa mocks**: todas as telas consomem a API real, com autenticação JWT, isolamento por organização e regras de acesso por papel. O banco pode ser populado com uma organização de demonstração reproduzível pelo seed.
+
+> Não é apresentado como um SaaS comercial completo. Cobrança, anexos, notificações em tempo real e integrações externas estão fora do escopo atual.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/deals.webp" alt="Pipeline de negócios em kanban">
+      <br><sub><b>Pipeline</b> — kanban por estágio, com valor, probabilidade e troca de etapa.</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/customer-detail.webp" alt="Ficha do cliente com contatos e interações">
+      <br><sub><b>Ficha do cliente</b> — dados cadastrais, contatos e histórico de interações.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/tasks.webp" alt="Lista de tarefas com prioridade, prazo e status">
+      <br><sub><b>Tarefas</b> — prioridade, prazo, atraso e conclusão.</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/dashboard-dark.webp" alt="Dashboard no tema escuro">
+      <br><sub><b>Tema escuro</b> — o sistema acompanha a preferência do sistema.</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>Mais telas</summary>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/customers.webp" alt="Lista de clientes"><br><sub>Clientes</sub></td>
+    <td width="50%"><img src="docs/screenshots/contacts.webp" alt="Diretório de contatos"><br><sub>Contatos</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/products.webp" alt="Catálogo de produtos"><br><sub>Produtos</sub></td>
+    <td width="50%"><img src="docs/screenshots/team.webp" alt="Gestão de equipe"><br><sub>Equipe</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.webp" alt="Tela de login da Nuvora"><br><sub>Login</sub></td>
+    <td width="50%"><img src="docs/screenshots/dashboard-tablet.webp" alt="Dashboard em viewport de tablet"><br><sub>Responsivo</sub></td>
+  </tr>
+</table>
+
+</details>
+
+## Funcionalidades
+
+### Autenticação e organização
+- Cadastro de organização + primeiro usuário `OWNER`.
+- Login com JWT, sessão restaurada no frontend e logout.
+- Recuperação e redefinição de senha por token.
+- Isolamento de dados por organização e autorização por papel:
+  `OWNER`, `ADMIN`, `MANAGER`, `SALES`, `SUPPORT`.
+- `maxUsers` aplicado na criação de usuários; último `OWNER` ativo protegido.
+
+### Carteira e relacionamento
+- CRUD de clientes com busca, status, CNPJ, setor, receita e funcionários.
+- Ficha do cliente com contatos e histórico de interações.
+- Contato principal único por cliente.
+- Interações com tipo, assunto, contato, duração e descrição.
+- Diretório global de contatos com busca.
+
+### Pipeline comercial
+- Negócios em kanban e tabela, com filtros e busca.
+- Criação, edição, mudança de estágio por drawer ou drag-and-drop.
+- Motivo obrigatório para `CLOSED_LOST`; probabilidade alinhada a ganho/perda.
+- Itens de negociação com produto, quantidade, preço, desconto e total calculado no servidor.
+- Proteção de exclusão: negócio com itens e produto usado não são removidos.
+
+### Tarefas e catálogo
+- Tarefas com cliente, negócio opcional, tipo, prioridade, prazo e status.
+- Filtros de status, prioridade e atrasadas; conclusão/reabertura.
+- Catálogo de produtos com escrita restrita a `OWNER`/`ADMIN`/`MANAGER`.
+
+### Dashboard
+- Pipeline por estágio, ganho/perda e taxa de ganho.
+- Tarefas do dia e atividade recente.
+- Saúde da carteira e maiores negócios abertos.
+- Dados agregados pela API, respeitando o escopo do usuário.
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Backend | NestJS 11, Fastify, TypeScript |
+| Banco | PostgreSQL 16, TypeORM, migrations versionadas |
+| Frontend | React 19, TypeScript, Vite, React Router |
+| UI | Design system próprio, IBM Plex Sans/Mono, CSS tokens |
+| Auth | JWT, bcrypt, guards globais, RBAC |
+| Infra local | Docker Compose, PostgreSQL 16 |
+| Testes | Jest, Supertest, PostgreSQL descartável |
+
+## Arquitetura
+
+```text
+┌──────────────────────┐        /api        ┌──────────────────────────┐
+│ web/                 │  Vite proxy dev    │ src/                     │
+│ React + TypeScript   │ ─────────────────► │ NestJS + Fastify         │
+│ React Router         │                    │ JWT / RBAC / validação   │
+└──────────────────────┘                    └────────────┬─────────────┘
+                                                         │ TypeORM
+                                                         ▼
+                                            ┌──────────────────────────┐
+                                            │ PostgreSQL 16            │
+                                            │ Docker Compose           │
+                                            └──────────────────────────┘
+```
+
+- `PRODUCT.md` registra usuários, capacidades e princípios do produto.
+- `DESIGN.md` registra a direção visual **Briefing / Precision UI**.
+- `web/` é o app final; `web/src/proposals/` guarda as propostas visuais que originaram a escolha.
+
+## Rodando localmente
+
+### Pré-requisitos
+
+- Node.js 22+
+- npm
+- Docker + Docker Compose
+- Git
+
+### 1. Backend e banco
+
+```bash
+git clone https://github.com/EdevandoAlves/api-nuvora-crm.git
+cd api-nuvora-crm
+
+cp .env-example .env
+docker compose up -d db
+
+npm install
+npm run migration:run
+npm run seed
+npm run start:dev
+```
+
+A API fica em `http://localhost:3000` e o Swagger em `http://localhost:3000/api`.
+
+O `seed` cria a organização **Nuvora Demo** com clientes, contatos, negócios, tarefas, interações, produtos e três usuários. Ele é idempotente: se a organização demo já existir, não altera nada.
+
+### 2. Frontend
+
+Em outro terminal:
 
 ```bash
 cd web
@@ -14,410 +173,91 @@ npm install
 npm run dev
 ```
 
-O Vite faz proxy de `/api` para a API local em `http://127.0.0.1:3000`. Use `/login` ou `/register`.
+Abra `http://localhost:5173`.
 
-Rotas implementadas: `/dashboard`, `/clientes`, `/clientes/:id`, `/negocios`, `/tarefas`, `/contatos`, `/produtos` e `/equipe`. O produto visual está em `PRODUCT.md` e o sistema de design em `DESIGN.md`.
+Em desenvolvimento, o Vite faz proxy de `/api` para `http://127.0.0.1:3000`. Para outro ambiente, defina `VITE_API_URL` com a URL pública da API.
 
-As propostas A (Console) e C (Atlas) permanecem em `src/proposals/` apenas como referência visual.
+### Contas de demonstração
 
-## Propósito
+| Papel | E-mail | Senha |
+|---|---|---|
+| Owner | `demo@nuvora.local` | `Demo1234!` |
+| Sales | `ana@nuvora.local` | `Demo1234!` |
+| Manager | `rafael@nuvora.local` | `Demo1234!` |
 
-O projeto demonstra uma API para iniciar o uso de um CRM por meio do cadastro de uma organização e de seu usuário proprietário, autenticar esse usuário com JWT, gerenciar clientes e acompanhar o ciclo de vida de negociações dentro de cada organização.
+O usuário `Sales` demonstra o isolamento por carteira e as restrições de escrita. O `Manager` consulta a organização sem gerenciar equipe.
 
-## Arquitetura e stack
+### Variáveis de ambiente
 
-- **Node.js + TypeScript** com **NestJS 11**;
-- adaptador HTTP **Fastify**;
-- **PostgreSQL** com **TypeORM** e migrations versionadas;
-- configuração por ambiente com `@nestjs/config` e `dotenv`;
-- validação global de DTOs com `class-validator` e `class-transformer`;
-- autenticação por **JWT** assinado com `jsonwebtoken`, registrada como `APP_GUARD` global em `AppModule`;
-- hash de senha com **bcrypt**;
-- recuperação de senha por e-mail via `@nestjs-modules/mailer` e Nodemailer;
-- documentação interativa com **Swagger**;
-- limitação global de requisições com `@nestjs/throttler`.
+O `.env-example` já funciona com o Docker Compose local. Para produção, troque pelo menos:
 
-A aplicação é organizada em módulos Nest. `AppModule` carrega configuração, conexão TypeORM, limitação global de requisições, guard JWT e os módulos de domínio. As entidades TypeORM modelam o domínio e as migrations mantêm o esquema do banco fora do ciclo de inicialização da aplicação (`synchronize: false`).
+- `SECRET_KEY` — assinatura dos JWTs.
+- `TYPEORM_PASSWORD` — senha do PostgreSQL.
+- `FRONTEND_URI` — base do link de redefinição de senha.
+- `SMTP_*` — credenciais reais para envio de e-mail.
 
-## Funcionalidades atuais
+Sem SMTP real, a solicitação de recuperação responde de forma genérica, mas o e-mail não é entregue.
 
-### Autenticação e perfil
+## Testes e qualidade
 
-- Cadastro de organização e primeiro usuário, criado com o papel `OWNER`.
-- Validação dos dados de entrada, normalização do e-mail no cadastro e prevenção de duplicidade por e-mail, CNPJ ou slug da organização.
-- Login com JWT de validade de um dia; usuários e organizações inativos não autenticam.
-- Login retorna um objeto `{ accessToken }` no corpo da resposta.
-- Solicitação de recuperação de senha com resposta genérica e token aleatório armazenado como hash, válido por uma hora.
-- Redefinição de senha com invalidação do token após o uso.
-- Rota de perfil protegida por JWT registrada em `GET /users/me`.
+```bash
+# Backend
+npm test
+npm run test:e2e
+npm run build
 
-### Clientes
+# Frontend
+cd web
+npm run build
+npm run lint
+```
 
-- CRUD completo de clientes por organização: criar, listar, buscar por id, atualizar e remover.
-- Cada cliente pertence à organização do usuário autenticado e ao seu `owner` por padrão.
-- Filtro automático por `organizationId` no service, impedindo leitura de clientes de outras organizações.
+- **2 testes unitários** e **20 testes E2E** no backend.
+- Os E2E usam um banco PostgreSQL descartável (`nuvora_crm_test`), criado e removido automaticamente.
+- `schema:log` do TypeORM fica limpo em relação às migrations.
+- Frontend validado com build, lint, smoke test das rotas principais como `OWNER` e `SALES`, além de inspeção visual em desktop/tablet e temas claro/escuro.
 
-### Negociações (deals)
-
-- `POST /deals` cria uma negociação vinculada a um cliente da mesma organização.
-- `GET /deals` lista negociações com paginação, filtros (`stage`, `customerId`, `ownerId`, intervalo de datas) e ordenação (`sortBy` e `sortOrder`).
-- `PATCH /deals/:id/stage` concentra a mudança de estágio e exige `lostReason` para `CLOSED_LOST`.
-- `DELETE /deals/:id` remove negociações sem itens de produto.
-- Resposta paginada segue o formato `{ data: DealResponseDto[], meta: { page, limit, total, totalPages } }`.
-
-### Contatos
-
-- CRUD aninhado em `/customers/:customerId/contacts`.
-- Um contato pertence ao cliente e à organização; o contato primário é único por cliente.
-- Contatos com interações vinculadas não podem ser removidos.
-
-### Interações
-
-- CRUD aninhado em `/customers/:customerId/interactions`.
-- Listagem paginada com filtros por tipo, contato, usuário e intervalo de datas.
-- O contato opcional precisa pertencer ao mesmo cliente.
-
-### Tarefas
-
-- CRUD em `/tasks`, com vínculo obrigatório a cliente e opcional a negociação.
-- `PATCH /tasks/:id/status` controla `PENDING`, `COMPLETED` e `CANCELLED`, preenchendo `completedAt` ao concluir.
-- Filtro `overdue=true` retorna tarefas pendentes com `dueDate` anterior a hoje.
-- SALES e SUPPORT enxergam apenas tarefas atribuídas a eles.
-
-### Produtos e itens de negociação
-
-- Catálogo em `/products`; leitura para a organização, escrita restrita a OWNER/ADMIN/MANAGER.
-- Itens em `/deals/:dealId/products`, com quantidade, preço unitário e desconto.
-- O `totalPrice` é calculado no servidor e recalculado em toda atualização.
-- Produto usado por negociação não pode ser removido; negociação com itens não pode ser removida.
-
-### Dashboard
-
-- `GET /dashboard/summary` agrega clientes por status, negociações por estágio e valor, tarefas e interações.
-- OWNER/ADMIN/MANAGER veem a organização; SALES/SUPPORT veem apenas seus clientes, negócios e tarefas.
-
-### Equipe
-
-- `GET /users` lista usuários da organização para OWNER/ADMIN/MANAGER.
-- `POST /users` e `PATCH /users/:id` são restritos a OWNER/ADMIN.
-- `maxUsers` da organização é aplicado na criação.
-- O último OWNER ativo não pode ser desativado ou rebaixado.
-
-### Guard global
-
-- `JwtAuthGuard` é registrado uma única vez como `APP_GUARD` em `AppModule`, aplicando autenticação a todas as rotas, exceto as marcadas com `@Public()` (cadastro, login, recuperação e redefinição de senha).
-- `RolesGuard` aplica `@Roles(...)` para restringir escrita de catálogo e gestão de equipe.
-
-### Coleção HTTP
-
-- O diretório `http/` traz scripts HTTPie e payloads JSON para testar os endpoints manualmente.
-- Os scripts usam caminho relativo corrigido via `cd "$(dirname "$0")"`, garantindo execução a partir de qualquer pasta.
-- O subdiretório `http/payloads/secrets/` é ignorado pelo Git e guarda credenciais reais fora do repositório.
-
-## Estrutura do projeto
+## Estrutura
 
 ```text
 api-nuvora-crm/
-├── http/                  # Coleção HTTPie (scripts + payloads JSON)
-├── src/
-│   ├── auth/              # Cadastro, login e recuperação de senha
-│   │   ├── dto/
-│   │   ├── auth.controller.ts
-│   │   ├── auth.module.ts
-│   │   └── auth.service.ts
-│   ├── common/
-│   │   ├── decorators/    # @Public e @Roles
-│   │   ├── guards/        # JwtAuthGuard e RolesGuard
-│   │   └── utils/         # Slug, tenant-context e erros TypeORM
-│   ├── contacts/          # Contatos por cliente
-│   ├── customers/         # CRUD de clientes
-│   ├── dashboard/         # Agregações operacionais
-│   ├── deal-products/     # Itens de produto por negociação
-│   ├── deals/             # Negociações (paginação e filtros)
-│   ├── entity/            # Entidades TypeORM do domínio CRM
-│   ├── interactions/      # Histórico de interações por cliente
-│   ├── migration/         # Migrations TypeORM
-│   ├── products/          # Catálogo de produtos
-│   ├── tasks/             # Tarefas e lifecycle de status
-│   ├── users/             # Perfil e gestão de equipe
-│   ├── app.module.ts      # Composição de módulos e APP_GUARD
-│   ├── data-source.ts     # Data source usado pelas migrations
-│   └── main.ts            # Bootstrap Fastify, validação e Swagger
-├── .env-example
-├── package.json
-└── tsconfig.json
+├── src/                        # API NestJS
+│   ├── auth/ users/ customers/ contacts/ interactions/
+│   ├── deals/ deal-products/ tasks/ products/ dashboard/
+│   ├── entity/                 # Entidades TypeORM
+│   ├── migration/              # Migrations versionadas
+│   └── common/                 # JWT, RBAC, tenant context
+├── test/                       # E2E com banco descartável
+├── scripts/seed-demo.ts        # Organização de demonstração
+├── web/                        # React + TypeScript + Vite
+│   ├── src/app/                # App, auth, páginas e UI
+│   ├── src/styles/             # Tokens e direção visual
+│   └── src/proposals/          # Propostas visuais de referência
+├── docs/screenshots/           # Imagens reais das telas
+├── docker-compose.yml          # PostgreSQL local
+├── docker/initdb/              # Extensões do Postgres
+├── PRODUCT.md
+├── DESIGN.md
+└── README.md
 ```
 
-## Pré-requisitos
+## Decisões que valem destacar
 
-- Node.js e npm (o repositório não fixa uma versão de Node em `package.json`);
-- uma instância acessível de PostgreSQL;
-- credenciais SMTP válidas para inicializar o módulo de e-mail, inclusive quando a recuperação de senha não for usada no momento.
+- **Multi-tenant desde o banco:** consultas filtram `organizationId` e, para papéis operacionais, também o `ownerId`.
+- **RBAC em camadas:** `JwtAuthGuard` + `RolesGuard` no Nest e controles de escrita no frontend.
+- **Migrations, não `synchronize`:** o schema é versionado e validado por `schema:log`.
+- **Dados reais no frontend:** nenhum mock nas telas entregues.
+- **Precision UI:** interface compacta, bordas de 1px, sem sombras, IBM Plex, âmbar como único acento de ação.
+- **Seed reproduzível:** qualquer pessoa consegue recriar a organização demo e ver o produto com dados.
 
-## Configuração de ambiente
+## Limitações e roadmap
 
-1. Crie seu arquivo local a partir do modelo:
+- Sem cobrança/upgrade de plano; `maxUsers` é aplicado, mas não há tela de billing.
+- Sem anexos, notificações em tempo real ou integrações Gmail/WhatsApp.
+- A recuperação de senha depende de SMTP configurado.
+- A suíte automatizada cobre o backend; o frontend tem build/lint e smoke test manual.
+- Próximos passos naturais: CI, testes E2E de frontend, anexos e notificações.
 
-   ```bash
-   cp .env-example .env
-   ```
+## Autor
 
-2. Preencha as variáveis abaixo com valores locais. Não versione o arquivo `.env`.
-
-| Variável | Uso |
-| --- | --- |
-| `PORT` | Porta HTTP da API; se ausente, a aplicação usa `3000`. |
-| `TYPEORM_HOST` | Host do PostgreSQL. |
-| `TYPEORM_PORT` | Porta do PostgreSQL; se ausente, o código usa `5432`. |
-| `TYPEORM_USERNAME` | Usuário do banco. |
-| `TYPEORM_PASSWORD` | Senha do banco. |
-| `TYPEORM_DATABASE` | Nome do banco. |
-| `SECRET_KEY` | Chave obrigatória para assinar e validar JWTs. |
-| `FRONTEND_URI` | Base usada para montar o link de redefinição de senha. |
-| `SMTP_HOST` | Host do servidor SMTP. |
-| `SMTP_PORT` | Porta do servidor SMTP. |
-| `SMTP_USER` | Usuário de autenticação SMTP. |
-| `SMTP_PASS` | Senha de autenticação SMTP. |
-| `NODE_ENV` | Quando definido como `production`, desabilita a interface Swagger. |
-
-`SECRET_KEY`, `FRONTEND_URI` e as quatro variáveis SMTP são lidas com `ConfigService.getOrThrow()` nos fluxos correspondentes. Os valores de `TYPEORM_HOST`, `TYPEORM_USERNAME` e `TYPEORM_DATABASE` também são necessários para uma conexão PostgreSQL funcional.
-
-## Instalação, migrations e execução
-
-### Banco local com Docker
-
-O `docker-compose.yml` sobe um PostgreSQL 16 com volume persistente e a extensão `uuid-ossp` criada pelo `docker/initdb`:
-
-```bash
-docker compose up -d db
-docker compose ps
-```
-
-O container se chama `nuvora-crm-db` e expõe a porta `5432`. O compose lê as variáveis `TYPEORM_*` do `.env`.
-
-Instale as dependências:
-
-```bash
-npm install
-```
-
-Com o PostgreSQL configurado e as variáveis de ambiente preenchidas, aplique as migrations:
-
-```bash
-npm run migration:run
-```
-
-Para desfazer a última migration aplicada:
-
-```bash
-npm run migration:revert
-```
-
-Inicie a API em modo de desenvolvimento com recarregamento:
-
-```bash
-npm run start:dev
-```
-
-Outros comandos disponíveis:
-
-| Comando | Finalidade |
-| --- | --- |
-| `npm run start` | Inicia a aplicação Nest sem modo watch. |
-| `npm run start:debug` | Inicia com depuração e modo watch. |
-| `npm run build` | Compila TypeScript para `dist/`. |
-| `npm run start:prod` | Executa `dist/main`; requer build prévio. |
-| `npm run format` | Formata arquivos TypeScript de `src/` com Prettier. |
-| `npm run lint` | Executa ESLint com correção automática. |
-| `npm test` | Executa os testes unitários com Jest. |
-| `npm run test:e2e` | Compila e executa os testes de integração em um banco PostgreSQL descartável (`nuvora_crm_test`). |
-
-## Swagger
-
-Com a API em execução e `NODE_ENV` diferente de `production`, a documentação Swagger fica em:
-
-```text
-http://localhost:<PORT>/api
-```
-
-Por exemplo, com a porta padrão: `http://localhost:3000/api`.
-
-A rota `/api` é configurada apenas fora de produção; ela não é exposta quando `NODE_ENV=production`.
-
-## Endpoints registrados atualmente
-
-### Autenticação e perfil
-
-| Método | Rota | Autenticação | Descrição |
-| --- | --- | --- | --- |
-| `POST` | `/auth/register` | Não | Cria uma organização e o primeiro usuário proprietário. |
-| `POST` | `/auth/login` | Não | Valida credenciais e retorna `{ accessToken }`. |
-| `POST` | `/auth/forgot-password` | Não | Solicita recuperação de senha; limitado a 3 requisições por 60 segundos. |
-| `POST` | `/auth/reset-password` | Não | Redefine a senha usando um token válido; limitado a 5 requisições por 60 segundos. |
-| `GET` | `/users/me` | Bearer JWT | Retorna o perfil do usuário autenticado, o papel e a organização. |
-
-### Clientes
-
-Todas as rotas exigem Bearer JWT, validado pela guard global.
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/customers` | Cria um cliente na organização do token. |
-| `GET` | `/customers` | Lista os clientes da organização. |
-| `GET` | `/customers/:id` | Busca um cliente por id dentro da organização. |
-| `PATCH` | `/customers/:id` | Atualiza um cliente da organização. |
-| `DELETE` | `/customers/:id` | Remove um cliente da organização. |
-
-### Negociações
-
-Todas as rotas exigem Bearer JWT, validado pela guard global.
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/deals` | Cria uma negociação vinculada a um cliente da organização. |
-| `GET` | `/deals` | Lista negociações com paginação, filtros e ordenação. |
-| `GET` | `/deals/:id` | Busca uma negociação por id dentro do escopo do usuário. |
-| `PATCH` | `/deals/:id` | Atualiza título, valor, cliente, probabilidade e previsão de fechamento. |
-| `PATCH` | `/deals/:id/stage` | Atualiza o estágio; exige `lostReason` para `CLOSED_LOST`. |
-| `DELETE` | `/deals/:id` | Remove uma negociação. |
-
-> `stage` e `lostReason` não são aceitos em `PATCH /deals/:id`; use a rota dedicada `PATCH /deals/:id/stage`. Isso mantém as regras de fechamento em um único lugar.
-
-`GET /deals` aceita os seguintes query params, todos opcionais:
-
-| Param | Tipo | Descrição |
-| --- | --- | --- |
-| `page` | number | Página atual; padrão `1`. |
-| `limit` | number | Tamanho da página; padrão `10`. |
-| `stage` | enum | Estágio da negociação (`QUALIFICATION`, `PROPOSAL`, `NEGOTIATION`, `CLOSED_WON`, `CLOSED_LOST`). |
-| `customerId` | uuid | Filtra por cliente. |
-| `ownerId` | uuid | Filtra por proprietário. |
-| `startDate` | date | Limite inferior de `createdAt` (`YYYY-MM-DD`). |
-| `endDate` | date | Limite superior de `createdAt` (`YYYY-MM-DD`). |
-| `sortBy` | enum | Campo de ordenação (`value`, `createdAt`, `expectedCloseDate`); padrão `createdAt`. |
-| `sortOrder` | enum | Direção (`ASC`, `DESC`); padrão `DESC`. |
-
-### Contatos
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/customers/:customerId/contacts` | Cria um contato. |
-| `GET` | `/customers/:customerId/contacts` | Lista contatos do cliente. |
-| `GET` | `/customers/:customerId/contacts/:id` | Busca um contato. |
-| `PATCH` | `/customers/:customerId/contacts/:id` | Atualiza um contato. |
-| `DELETE` | `/customers/:customerId/contacts/:id` | Remove um contato sem interações. |
-
-### Interações
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/customers/:customerId/interactions` | Registra uma interação. |
-| `GET` | `/customers/:customerId/interactions` | Lista com paginação e filtros. |
-| `GET` | `/customers/:customerId/interactions/:id` | Busca uma interação. |
-| `PATCH` | `/customers/:customerId/interactions/:id` | Atualiza uma interação. |
-| `DELETE` | `/customers/:customerId/interactions/:id` | Remove uma interação. |
-
-### Tarefas
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/tasks` | Cria uma tarefa. |
-| `GET` | `/tasks` | Lista com filtros e paginação. |
-| `GET` | `/tasks/:id` | Busca uma tarefa. |
-| `PATCH` | `/tasks/:id` | Atualiza título, descrição, tipo, prioridade, prazo e responsável. |
-| `PATCH` | `/tasks/:id/status` | Atualiza o status e `completedAt`. |
-| `DELETE` | `/tasks/:id` | Remove uma tarefa. |
-
-`GET /tasks` aceita `status`, `priority`, `type`, `customerId`, `dealId`, `userId`, `overdue`, `page`, `limit`, `sortBy` e `sortOrder`.
-
-### Produtos
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/products` | Cria produto; OWNER/ADMIN/MANAGER. |
-| `GET` | `/products` | Lista produtos; filtros `search`, `category`, `isActive`. |
-| `GET` | `/products/:id` | Busca um produto. |
-| `PATCH` | `/products/:id` | Atualiza produto; OWNER/ADMIN/MANAGER. |
-| `DELETE` | `/products/:id` | Remove produto sem uso; OWNER/ADMIN/MANAGER. |
-
-### Itens de negociação
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/deals/:dealId/products` | Lista itens da negociação. |
-| `POST` | `/deals/:dealId/products` | Adiciona produto; preço padrão vem do catálogo. |
-| `PATCH` | `/deals/:dealId/products/:id` | Atualiza quantidade, preço ou desconto. |
-| `DELETE` | `/deals/:dealId/products/:id` | Remove o item. |
-
-### Dashboard
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/dashboard/summary` | Agrega clientes, negócios, tarefas e interações. |
-
-### Equipe
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/users` | Lista usuários da organização; OWNER/ADMIN/MANAGER. |
-| `POST` | `/users` | Cria usuário; OWNER/ADMIN; respeita `maxUsers`. |
-| `GET` | `/users/:id` | Busca usuário da organização; OWNER/ADMIN/MANAGER. |
-| `PATCH` | `/users/:id` | Atualiza nome, papel, avatar ou `isActive`; OWNER/ADMIN. |
-
-### Saúde
-
-| Método | Rota | Autenticação | Descrição |
-| --- | --- | --- | --- |
-| `GET` | `/ping` | Não | Retorna `Pong` como verificação simples de disponibilidade. |
-
-Para chamar rotas protegidas, envie o token retornado por `/auth/login` no cabeçalho:
-
-```http
-Authorization: Bearer <token>
-```
-
-## Testando com a coleção HTTPie
-
-Com a aplicação em execução, a coleção `http/` permite testar os endpoints sem montar `curl` manualmente.
-
-Exemplo, a partir da raiz do repositório:
-
-```bash
-./http/auth/register.sh "minha-senha"
-./http/auth/login.sh
-./http/customers/create.sh
-./http/deals/findAll.sh
-```
-
-Variáveis sensíveis (por exemplo, o `userAdmin.json` usado pelo `login.sh`) ficam em `http/payloads/secrets/`, que está ignorado pelo Git. O `register.sh` recebe a senha como primeiro argumento em vez de versioná-la.
-
-A coleção assume que a variável `$BASE` aponta para a API, por exemplo:
-
-```fish
-set -gx BASE "http://localhost:3001"
-```
-
-## Segurança: práticas presentes e limitações atuais
-
-### Práticas presentes
-
-- Senhas são armazenadas com bcrypt (`12` rounds no cadastro e `10` na redefinição).
-- O cadastro valida formato e tamanho de e-mail, senha, nomes, empresa e CNPJ; a senha exige pelo menos oito caracteres.
-- O `ValidationPipe` global transforma entradas, remove campos não permitidos e rejeita campos desconhecidos.
-- O login devolve a mesma mensagem para credenciais inválidas, usuário inativo e organização inativa.
-- Tokens de recuperação são gerados com `crypto.randomBytes`, persistidos como hash SHA-256 e expirados após uma hora; são anulados depois do uso.
-- A guard JWT exige o esquema `Authorization: Bearer <token>` e verifica a assinatura com `SECRET_KEY`.
-- A guard JWT é aplicada globalmente, exceto nas rotas marcadas com `@Public()`.
-- Há limitação global de 60 requisições por 60 segundos, além de limites mais restritos nas rotas de recuperação de senha.
-- `.env` e `http/payloads/secrets/` estão ignorados pelo Git.
-
-### Limitações e TODOs verificados
-
-- `maxUsers` é aplicado na criação de usuários, mas upgrade de plano/billing ainda não tem rota.
-- Não há convite por e-mail, troca de senha pelo próprio usuário nem recuperação de senha com tela própria.
-- Negociação com itens não pode ser removida; remova os itens primeiro.
-- Integrações reais com Gmail ou WhatsApp, cobrança, notificações em tempo real, upload de arquivos, automações de marketing e CRM SaaS multi-tenant comercial permanecem fora do escopo atual.
-
-## Roadmap
-
-Evoluções futuras podem incluir: gestão de planos/billing, convites e troca de senha, seed inicial, upload de anexos, notificações em tempo real, integrações externas e execução dos testes E2E em CI.
+Feito por **Edevando Alves** — [github.com/EdevandoAlves](https://github.com/EdevandoAlves).
