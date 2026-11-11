@@ -20,6 +20,7 @@ import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
 import { DealsModule } from "./deals/deals.module";
 import { ContactsModule } from "./contacts/contacts.module";
+import { InteractionsModule } from "./interactions/interactions.module";
 
 @Module({
   controllers: [AppController],
@@ -70,6 +71,7 @@ import { ContactsModule } from "./contacts/contacts.module";
     CustomersModule,
     DealsModule,
     ContactsModule,
+    InteractionsModule,
   ],
 })
 export class AppModule {}

@@ -142,6 +142,23 @@ describe("Nuvora CRM API (e2e)", () => {
     return response.body;
   }
 
+  async function createInteraction(
+    token: string,
+    customerId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const response = await request(server)
+      .post(`/customers/${customerId}/interactions`)
+      .set(auth(token))
+      .send({
+        type: "CALL",
+        description: "Ligação de acompanhamento",
+        ...overrides,
+      })
+      .expect(201);
+    return response.body;
+  }
+
   it("returns the authenticated user profile without credentials", async () => {
     const owner = await register();
 
@@ -345,6 +362,85 @@ describe("Nuvora CRM API (e2e)", () => {
       .post(`/customers/${ownerCustomer.id}/contacts`)
       .set(auth(salesToken))
       .send({ firstName: "Sem", lastName: "Acesso" })
+      .expect(404);
+  });
+
+  it("manages customer interactions with pagination and filters", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Interações");
+    const contact = await createContact(owner.token, customer.id);
+
+    const interaction = await createInteraction(owner.token, customer.id, {
+      contactId: contact.id,
+      subject: "Primeiro contato",
+      duration: 15,
+    });
+    expect(interaction.contactId).toBe(contact.id);
+    expect(interaction.userId).toBeDefined();
+
+    const list = await request(server)
+      .get(`/customers/${customer.id}/interactions`)
+      .query({ type: "CALL", limit: 1 })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(list.body.data).toHaveLength(1);
+    expect(list.body.meta).toMatchObject({ page: 1, limit: 1, total: 1 });
+
+    const updated = await request(server)
+      .patch(`/customers/${customer.id}/interactions/${interaction.id}`)
+      .set(auth(owner.token))
+      .send({ description: "Ligação concluída" })
+      .expect(200);
+    expect(updated.body.description).toBe("Ligação concluída");
+
+    await request(server)
+      .delete(`/customers/${customer.id}/interactions/${interaction.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    await request(server)
+      .get(`/customers/${customer.id}/interactions/${interaction.id}`)
+      .set(auth(owner.token))
+      .expect(404);
+  });
+
+  it("rejects interactions with a contact from another customer", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente A");
+    const otherCustomer = await createCustomer(owner.token, "Cliente B");
+    const otherContact = await createContact(owner.token, otherCustomer.id);
+
+    await request(server)
+      .post(`/customers/${customer.id}/interactions`)
+      .set(auth(owner.token))
+      .send({
+        type: "CALL",
+        description: "Contato cruzado",
+        contactId: otherContact.id,
+      })
+      .expect(404);
+  });
+
+  it("scopes interactions by customer owner", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+
+    await request(server)
+      .get(`/customers/${ownerCustomer.id}/interactions`)
+      .set(auth(salesToken))
+      .expect(404);
+
+    await request(server)
+      .post(`/customers/${ownerCustomer.id}/interactions`)
+      .set(auth(salesToken))
+      .send({ type: "CALL", description: "Sem acesso" })
       .expect(404);
   });
 });
