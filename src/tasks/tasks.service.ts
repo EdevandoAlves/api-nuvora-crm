@@ -142,7 +142,7 @@ export class TasksService {
       description: dto.description,
       type: dto.type,
       priority: dto.priority,
-      dueDate: new Date(dto.dueDate),
+      dueDate: dto.dueDate,
       status: TaskStatus.PENDING,
     });
 
@@ -173,7 +173,7 @@ export class TasksService {
 
     if (query.overdue) {
       where.status = TaskStatus.PENDING;
-      where.dueDate = LessThan(new Date(today()));
+      where.dueDate = LessThan(today());
     }
 
     const page = query.page ?? 1;
@@ -221,7 +221,7 @@ export class TasksService {
     if (dto.description !== undefined) task.description = dto.description;
     if (dto.type !== undefined) task.type = dto.type;
     if (dto.priority !== undefined) task.priority = dto.priority;
-    if (dto.dueDate !== undefined) task.dueDate = new Date(dto.dueDate);
+    if (dto.dueDate !== undefined) task.dueDate = dto.dueDate;
 
     await this.taskRepo.save(task);
     return this.toResponseDto(task);

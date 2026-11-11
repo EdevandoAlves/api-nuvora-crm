@@ -33,7 +33,7 @@ export class TaskResponseDto {
   priority: TaskPriority;
 
   @ApiProperty({ format: "date" })
-  dueDate: Date;
+  dueDate: string;
 
   @ApiProperty({ enum: TaskStatus })
   status: TaskStatus;

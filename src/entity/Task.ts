@@ -79,7 +79,7 @@ export class Task {
   priority: TaskPriority;
 
   @Column({ type: "date" })
-  dueDate: Date;
+  dueDate: string;
 
   @Column({ type: "enum", enum: TaskStatus, default: TaskStatus.PENDING })
   status: TaskStatus;

@@ -167,7 +167,7 @@ export class DashboardService {
         where: {
           ...taskBase,
           status: TaskStatus.PENDING,
-          dueDate: LessThan(new Date(today())),
+          dueDate: LessThan(today()),
         },
       }),
       this.interactionQuery(ctx).getCount(),
