@@ -2,7 +2,7 @@
 
 API REST demonstrativa de um CRM comercial, criada para portfólio com foco em modelagem de domínio, autenticação, isolamento por organização e uma base preparada para evoluir regras de negócio. Não é apresentada como um CRM SaaS completo.
 
-> **Status atual:** a API expõe rotas de autenticação, perfil, clientes e negociações. Tarefas, interações e dashboard permanecem apenas como entidades/modelos no banco, sem rotas publicadas.
+> **Status atual:** a API expõe rotas de autenticação, perfil, clientes e negociações (incluindo atualização de estágio e remoção). Tarefas, interações, contatos, produtos e dashboard permanecem apenas como entidades/modelos no banco, sem rotas publicadas.
 
 ## Propósito
 
@@ -117,9 +117,20 @@ api-nuvora-crm/
 | `SMTP_PASS` | Senha de autenticação SMTP. |
 | `NODE_ENV` | Quando definido como `production`, desabilita a interface Swagger. |
 
-`SECRET_KEY`, `FRONTEND_URI` e as quatro variáveis SMTP são lidas com `ConfigService.getOrThrow()` nos fluxos correspondentes. Os valores de `TYPEORM_HOST`, `TYPEORM_USERNAME` e `TYPEORM_DATABASE` também são necessários para uma conexão PostgreSQL funcional. O arquivo `.env-example` contém apenas parte dessas chaves; complete o `.env` local sem incluir valores reais nesta documentação.
+`SECRET_KEY`, `FRONTEND_URI` e as quatro variáveis SMTP são lidas com `ConfigService.getOrThrow()` nos fluxos correspondentes. Os valores de `TYPEORM_HOST`, `TYPEORM_USERNAME` e `TYPEORM_DATABASE` também são necessários para uma conexão PostgreSQL funcional.
 
 ## Instalação, migrations e execução
+
+### Banco local com Docker
+
+O `docker-compose.yml` sobe um PostgreSQL 16 com volume persistente e a extensão `uuid-ossp` criada pelo `docker/initdb`:
+
+```bash
+docker compose up -d db
+docker compose ps
+```
+
+O container se chama `nuvora-crm-db` e expõe a porta `5432`. O compose lê as variáveis `TYPEORM_*` do `.env`.
 
 Instale as dependências:
 
@@ -155,6 +166,8 @@ Outros comandos disponíveis:
 | `npm run start:prod` | Executa `dist/main`; requer build prévio. |
 | `npm run format` | Formata arquivos TypeScript de `src/` com Prettier. |
 | `npm run lint` | Executa ESLint com correção automática. |
+| `npm test` | Executa os testes unitários com Jest. |
+| `npm run test:e2e` | Compila e executa os testes de integração em um banco PostgreSQL descartável (`nuvora_crm_test`). |
 
 ## Swagger
 
@@ -178,7 +191,7 @@ A rota `/api` é configurada apenas fora de produção; ela não é exposta quan
 | `POST` | `/auth/login` | Não | Valida credenciais e retorna `{ accessToken }`. |
 | `POST` | `/auth/forgot-password` | Não | Solicita recuperação de senha; limitado a 3 requisições por 60 segundos. |
 | `POST` | `/auth/reset-password` | Não | Redefine a senha usando um token válido; limitado a 5 requisições por 60 segundos. |
-| `GET` | `/users/me` | Bearer JWT | Rota de perfil protegida pela guard global. |
+| `GET` | `/users/me` | Bearer JWT | Retorna o perfil do usuário autenticado, o papel e a organização. |
 
 ### Clientes
 
@@ -200,9 +213,12 @@ Todas as rotas exigem Bearer JWT, validado pela guard global.
 | --- | --- | --- |
 | `POST` | `/deals` | Cria uma negociação vinculada a um cliente da organização. |
 | `GET` | `/deals` | Lista negociações com paginação, filtros e ordenação. |
-| `GET` | `/deals/:id` | Busca uma negociação por id (stub atual). |
-| `PATCH` | `/deals/:id` | Atualiza uma negociação (stub atual). |
-| `DELETE` | `/deals/:id` | Remove uma negociação (stub atual). |
+| `GET` | `/deals/:id` | Busca uma negociação por id dentro do escopo do usuário. |
+| `PATCH` | `/deals/:id` | Atualiza título, valor, cliente, probabilidade e previsão de fechamento. |
+| `PATCH` | `/deals/:id/stage` | Atualiza o estágio; exige `lostReason` para `CLOSED_LOST`. |
+| `DELETE` | `/deals/:id` | Remove uma negociação. |
+
+> `stage` e `lostReason` não são aceitos em `PATCH /deals/:id`; use a rota dedicada `PATCH /deals/:id/stage`. Isso mantém as regras de fechamento em um único lugar.
 
 `GET /deals` aceita os seguintes query params, todos opcionais:
 
