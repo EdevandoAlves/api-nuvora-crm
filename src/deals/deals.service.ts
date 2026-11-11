@@ -283,6 +283,11 @@ export class DealsService {
     }
 
     deal.stage = updateStageDealDto.stage;
+    if (updateStageDealDto.stage === DealStage.CLOSED_WON) {
+      deal.probability = 100;
+    } else if (updateStageDealDto.stage === DealStage.CLOSED_LOST) {
+      deal.probability = 0;
+    }
     if (isClosing) {
       deal.closedAt = deal.closedAt ?? new Date();
     } else {

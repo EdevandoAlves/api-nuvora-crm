@@ -245,6 +245,7 @@ describe("Nuvora CRM API (e2e)", () => {
       .send({ stage: "CLOSED_WON" })
       .expect(200);
     expect(won.body.stage).toBe("CLOSED_WON");
+    expect(won.body.probability).toBe(100);
     expect(won.body.closedAt).toBeTruthy();
     expect(won.body.lostReason).toBeNull();
 
@@ -260,6 +261,7 @@ describe("Nuvora CRM API (e2e)", () => {
       .send({ stage: "CLOSED_LOST", lostReason: "Preço" })
       .expect(200);
     expect(lost.body.lostReason).toBe("Preço");
+    expect(lost.body.probability).toBe(0);
 
     const reopened = await request(server)
       .patch(`/deals/${deal.id}/stage`)
