@@ -10,6 +10,9 @@ export class ContactResponseDto {
   @ApiProperty()
   customerId: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  customerName: string | null;
+
   @ApiProperty()
   firstName: string;
 

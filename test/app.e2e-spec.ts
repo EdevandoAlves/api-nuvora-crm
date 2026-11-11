@@ -394,6 +394,25 @@ describe("Nuvora CRM API (e2e)", () => {
       .expect(404);
   });
 
+  it("lists contacts across the organization", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Diretório");
+    await createContact(owner.token, customer.id, {
+      firstName: "Carla",
+      lastName: "Diretório",
+      email: "carla@example.com",
+    });
+
+    const response = await request(server)
+      .get("/contacts")
+      .query({ search: "Carla" })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].customerName).toBe("Cliente Diretório");
+    expect(response.body.meta.total).toBe(1);
+  });
+
   it("scopes contacts by customer owner", async () => {
     const owner = await register();
     const me = await request(server)

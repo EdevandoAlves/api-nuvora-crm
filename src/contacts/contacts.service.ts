@@ -11,6 +11,8 @@ import { Customer } from "src/entity/Customer";
 import { Interaction } from "src/entity/Interaction";
 import { ContactResponseDto } from "./dto/contact-response.dto";
 import { CreateContactDto } from "./dto/create-contact.dto";
+import { PaginatedContactResponseDto } from "./dto/paginated-contact-response.dto";
+import { QueryContactDirectoryDto } from "./dto/query-contact-directory.dto";
 import { UpdateContactDto } from "./dto/update-contact.dto";
 
 @Injectable()
@@ -46,6 +48,7 @@ export class ContactsService {
   ): Promise<Contact> {
     const contact = await this.contactRepo.findOne({
       where: { id: contactId, customerId, organizationId },
+      relations: { customer: true },
     });
     if (!contact) {
       throw new NotFoundException("Contact not found");
@@ -58,6 +61,7 @@ export class ContactsService {
       id: contact.id,
       organizationId: contact.organizationId,
       customerId: contact.customerId,
+      customerName: contact.customer?.companyName ?? null,
       firstName: contact.firstName,
       lastName: contact.lastName,
       email: contact.email ?? null,
@@ -110,6 +114,7 @@ export class ContactsService {
     });
 
     const saved = await this.saveContact(contact);
+    saved.customer = customer;
     return this.toResponseDto(saved);
   }
 
@@ -123,9 +128,56 @@ export class ContactsService {
         organizationId: customer.organizationId,
         customerId: customer.id,
       },
+      relations: { customer: true },
       order: { isPrimary: "DESC", firstName: "ASC", lastName: "ASC" },
     });
     return contacts.map((contact) => this.toResponseDto(contact));
+  }
+
+  async listDirectory(
+    query: QueryContactDirectoryDto,
+    ctx: TenantContext,
+  ): Promise<PaginatedContactResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 50;
+    const qb = this.contactRepo
+      .createQueryBuilder("contact")
+      .innerJoinAndSelect("contact.customer", "customer")
+      .where("contact.organizationId = :organizationId", {
+        organizationId: ctx.organizationId,
+      });
+
+    if (!hasFullAccess(ctx.role)) {
+      qb.andWhere("customer.ownerId = :ownerId", { ownerId: ctx.ownerId });
+    }
+    if (query.customerId) {
+      qb.andWhere("contact.customerId = :customerId", {
+        customerId: query.customerId,
+      });
+    }
+    if (query.search?.trim()) {
+      qb.andWhere(
+        "(LOWER(contact.firstName) LIKE :term OR LOWER(contact.lastName) LIKE :term OR LOWER(COALESCE(contact.email, '')) LIKE :term OR LOWER(customer.companyName) LIKE :term)",
+        { term: `%${query.search.trim().toLowerCase()}%` },
+      );
+    }
+
+    const [contacts, total] = await qb
+      .orderBy("contact.firstName", "ASC")
+      .addOrderBy("contact.lastName", "ASC")
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: contacts.map((contact) => this.toResponseDto(contact)),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(
