@@ -1066,3 +1066,209 @@
   border-color: var(--line);
   background: var(--surface-2);
 }
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.segmented button:hover {
+  color: var(--ink);
+}
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(208px, 1fr));
+  gap: 8px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.kanban-column.is-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.kanban-column__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 10px;
+}
+
+.kanban-column__head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kanban-column__head i {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--chart-5);
+}
+
+.kanban-column__head strong {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.kanban-column__value {
+  padding: 2px 0 8px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.kanban-column__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--ink-2);
+  text-align: left;
+  cursor: grab;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.deal-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.deal-card.is-dragging {
+  opacity: 0.45;
+}
+
+.deal-card__title {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 15px;
+}
+
+.deal-card__customer {
+  color: var(--faint);
+  font-size: 9px;
+  line-height: 13px;
+}
+
+.deal-card__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.deal-card__prob {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.deal-card__foot strong {
+  color: var(--ink-2);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.deal-card__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 8px;
+}
+
+.kanban-column__empty {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 3px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.drawer-section {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.sk-kanban-head {
+  width: 80px;
+  height: 10px;
+  margin-bottom: 8px;
+}
+
+.sk-deal-card {
+  height: 70px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 760px) {
+  .kanban {
+    grid-template-columns: repeat(5, 220px);
+  }
+}

@@ -74,9 +74,7 @@ export function formatWeekLabel(value: string): string {
 }
 
 function parseDateOnly(value: string): Date {
-  return value.length === 10
-    ? new Date(`${value}T12:00:00`)
-    : new Date(value);
+  return value.length === 10 ? new Date(`${value}T12:00:00`) : new Date(value);
 }
 
 export function initials(firstName: string, lastName: string): string {
@@ -119,7 +117,7 @@ export function formatDate(value: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(parseDateOnly(value));
 }
 
 export function formatCnpj(value: string | null): string {
@@ -181,9 +179,7 @@ export function isManagementRole(role: UserRole): boolean {
 
 export function isOpenStage(stage: DealStage): boolean {
   return (
-    stage === "QUALIFICATION" ||
-    stage === "PROPOSAL" ||
-    stage === "NEGOTIATION"
+    stage === "QUALIFICATION" || stage === "PROPOSAL" || stage === "NEGOTIATION"
   );
 }
 

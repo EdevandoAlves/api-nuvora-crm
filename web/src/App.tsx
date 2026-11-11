@@ -12,6 +12,7 @@ import { DashboardPage } from "./app/pages/DashboardPage";
 import { LoginPage, RegisterPage } from "./app/pages/AuthPages";
 import { CustomerDetailPage } from "./app/pages/CustomerDetailPage";
 import { CustomersPage } from "./app/pages/CustomersPage";
+import { DealsPage } from "./app/pages/DealsPage";
 import { PlaceholderPage } from "./app/pages/PlaceholderPage";
 
 function FullPageLoader() {
@@ -54,15 +55,7 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/clientes" element={<CustomersPage />} />
               <Route path="/clientes/:id" element={<CustomerDetailPage />} />
-              <Route
-                path="/negocios"
-                element={
-                  <PlaceholderPage
-                    title="Negócios"
-                    description="Pipeline, estágios e itens de negociação."
-                  />
-                }
-              />
+              <Route path="/negocios" element={<DealsPage />} />
               <Route
                 path="/tarefas"
                 element={
