@@ -42,6 +42,7 @@ export class DealsService {
       id: deal.id,
       organizationId: deal.organizationId,
       customerId: deal.customerId,
+      customerName: deal.customer?.companyName ?? null,
       ownerId: deal.ownerId,
       title: deal.title,
       value: Number(deal.value),
@@ -92,6 +93,7 @@ export class DealsService {
     });
 
     await this.dealRepo.save(deal);
+    deal.customer = customer;
 
     return this.toResponseDto(deal);
   }
@@ -138,6 +140,7 @@ export class DealsService {
 
     const [deals, total] = await this.dealRepo.findAndCount({
       where,
+      relations: { customer: true },
       skip,
       take: limit,
       order: { [sortBy]: sortOrder },
@@ -169,7 +172,10 @@ export class DealsService {
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
-    const deal = await this.dealRepo.findOne({ where });
+    const deal = await this.dealRepo.findOne({
+      where,
+      relations: { customer: true },
+    });
 
     if (!deal) {
       throw new NotFoundException(message);
@@ -195,7 +201,10 @@ export class DealsService {
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
-    const deal = await this.dealRepo.findOne({ where });
+    const deal = await this.dealRepo.findOne({
+      where,
+      relations: { customer: true },
+    });
 
     if (!deal) {
       throw new NotFoundException(message);
@@ -209,6 +218,7 @@ export class DealsService {
         throw new NotFoundException(customerMessage);
       }
       deal.customerId = updateDealDto.customerId;
+      deal.customer = customer;
     }
 
     if (updateDealDto.title !== undefined) {
@@ -250,7 +260,10 @@ export class DealsService {
       ? { id, organizationId }
       : { id, organizationId, ownerId };
 
-    const deal = await this.dealRepo.findOne({ where });
+    const deal = await this.dealRepo.findOne({
+      where,
+      relations: { customer: true },
+    });
 
     if (!deal) {
       throw new NotFoundException(message);

@@ -11,6 +11,9 @@ export class DealResponseDto {
   @ApiProperty()
   customerId: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  customerName: string | null;
+
   @ApiProperty()
   ownerId: string;
 

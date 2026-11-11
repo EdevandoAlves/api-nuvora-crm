@@ -231,6 +231,7 @@ describe("Nuvora CRM API (e2e)", () => {
     const owner = await register();
     const customer = await createCustomer(owner.token, "Cliente Stage");
     const deal = await createDeal(owner.token, customer.id);
+    expect(deal.customerName).toBe("Cliente Stage");
 
     await request(server)
       .patch(`/deals/${deal.id}`)
