@@ -21,6 +21,7 @@ import { CustomersModule } from "./customers/customers.module";
 import { DealsModule } from "./deals/deals.module";
 import { ContactsModule } from "./contacts/contacts.module";
 import { InteractionsModule } from "./interactions/interactions.module";
+import { TasksModule } from "./tasks/tasks.module";
 
 @Module({
   controllers: [AppController],
@@ -72,6 +73,7 @@ import { InteractionsModule } from "./interactions/interactions.module";
     DealsModule,
     ContactsModule,
     InteractionsModule,
+    TasksModule,
   ],
 })
 export class AppModule {}

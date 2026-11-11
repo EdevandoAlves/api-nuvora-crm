@@ -159,6 +159,28 @@ describe("Nuvora CRM API (e2e)", () => {
     return response.body;
   }
 
+  async function createTask(
+    token: string,
+    customerId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const dueDate = new Date(Date.now() + 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const response = await request(server)
+      .post("/tasks")
+      .set(auth(token))
+      .send({
+        customerId,
+        title: "Tarefa de acompanhamento",
+        type: "CALL",
+        dueDate,
+        ...overrides,
+      })
+      .expect(201);
+    return response.body;
+  }
+
   it("returns the authenticated user profile without credentials", async () => {
     const owner = await register();
 
@@ -442,5 +464,121 @@ describe("Nuvora CRM API (e2e)", () => {
       .set(auth(salesToken))
       .send({ type: "CALL", description: "Sem acesso" })
       .expect(404);
+  });
+
+  it("manages tasks and status lifecycle", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Tarefas");
+    const deal = await createDeal(owner.token, customer.id, "Deal Tarefas");
+
+    const task = await createTask(owner.token, customer.id, {
+      dealId: deal.id,
+      priority: "HIGH",
+    });
+    expect(task.status).toBe("PENDING");
+    expect(task.dealId).toBe(deal.id);
+
+    const list = await request(server)
+      .get("/tasks")
+      .query({ status: "PENDING", customerId: customer.id })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(list.body.data.map((item) => item.id)).toContain(task.id);
+
+    const updated = await request(server)
+      .patch(`/tasks/${task.id}`)
+      .set(auth(owner.token))
+      .send({ title: "Tarefa atualizada", priority: "LOW" })
+      .expect(200);
+    expect(updated.body.title).toBe("Tarefa atualizada");
+    expect(updated.body.priority).toBe("LOW");
+
+    const completed = await request(server)
+      .patch(`/tasks/${task.id}/status`)
+      .set(auth(owner.token))
+      .send({ status: "COMPLETED" })
+      .expect(200);
+    expect(completed.body.status).toBe("COMPLETED");
+    expect(completed.body.completedAt).toBeTruthy();
+
+    const reopened = await request(server)
+      .patch(`/tasks/${task.id}/status`)
+      .set(auth(owner.token))
+      .send({ status: "PENDING" })
+      .expect(200);
+    expect(reopened.body.completedAt).toBeNull();
+
+    await request(server)
+      .delete(`/tasks/${task.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    await request(server)
+      .get(`/tasks/${task.id}`)
+      .set(auth(owner.token))
+      .expect(404);
+  });
+
+  it("filters overdue tasks", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Atraso");
+    const yesterday = new Date(Date.now() - 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+
+    const task = await createTask(owner.token, customer.id, {
+      dueDate: yesterday,
+    });
+
+    const response = await request(server)
+      .get("/tasks")
+      .query({ overdue: true })
+      .set(auth(owner.token))
+      .expect(200);
+    expect(response.body.data.map((item) => item.id)).toContain(task.id);
+  });
+
+  it("scopes tasks by assignee", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    const sales = await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+
+    const assignedToSales = await createTask(owner.token, ownerCustomer.id, {
+      userId: sales.id,
+    });
+    await createTask(owner.token, ownerCustomer.id, {
+      title: "Tarefa do owner",
+    });
+
+    const salesTasks = await request(server)
+      .get("/tasks")
+      .set(auth(salesToken))
+      .expect(200);
+    expect(salesTasks.body.data.map((item) => item.id)).toEqual([
+      assignedToSales.id,
+    ]);
+
+    await request(server)
+      .post("/tasks")
+      .set(auth(salesToken))
+      .send({
+        customerId: ownerCustomer.id,
+        title: "Sem acesso",
+        type: "CALL",
+        dueDate: new Date().toISOString().slice(0, 10),
+      })
+      .expect(404);
+
+    await request(server)
+      .patch(`/tasks/${assignedToSales.id}`)
+      .set(auth(salesToken))
+      .send({ userId: me.body.id })
+      .expect(403);
   });
 });
