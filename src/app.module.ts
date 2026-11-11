@@ -19,6 +19,7 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
 import { DealsModule } from "./deals/deals.module";
+import { ContactsModule } from "./contacts/contacts.module";
 
 @Module({
   controllers: [AppController],
@@ -68,6 +69,7 @@ import { DealsModule } from "./deals/deals.module";
     UsersModule,
     CustomersModule,
     DealsModule,
+    ContactsModule,
   ],
 })
 export class AppModule {}

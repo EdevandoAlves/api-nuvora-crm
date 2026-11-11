@@ -71,10 +71,7 @@ describe("Nuvora CRM API (e2e)", () => {
 
   async function register(overrides: Partial<Credentials> = {}) {
     const body = { ...ownerCredentials, ...overrides };
-    await request(server)
-      .post("/auth/register")
-      .send(body)
-      .expect(201);
+    await request(server).post("/auth/register").send(body).expect(201);
 
     const login = await request(server)
       .post("/auth/login")
@@ -124,6 +121,23 @@ describe("Nuvora CRM API (e2e)", () => {
       .post("/deals")
       .set(auth(token))
       .send({ customerId, title, value: 1000 })
+      .expect(201);
+    return response.body;
+  }
+
+  async function createContact(
+    token: string,
+    customerId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const response = await request(server)
+      .post(`/customers/${customerId}/contacts`)
+      .set(auth(token))
+      .send({
+        firstName: "Ana",
+        lastName: "Silva",
+        ...overrides,
+      })
       .expect(201);
     return response.body;
   }
@@ -259,14 +273,78 @@ describe("Nuvora CRM API (e2e)", () => {
       .get("/deals")
       .set(auth(salesToken))
       .expect(200);
-    expect(salesDeals.body.data.map((deal) => deal.id)).toEqual([
-      salesDeal.id,
-    ]);
+    expect(salesDeals.body.data.map((deal) => deal.id)).toEqual([salesDeal.id]);
 
     const ownerDeals = await request(server)
       .get("/deals")
       .set(auth(owner.token))
       .expect(200);
     expect(ownerDeals.body.data).toHaveLength(2);
+  });
+
+  it("manages contacts and keeps a single primary contact", async () => {
+    const owner = await register();
+    const customer = await createCustomer(owner.token, "Cliente Contatos");
+
+    const first = await createContact(owner.token, customer.id, {
+      isPrimary: true,
+    });
+    const second = await createContact(owner.token, customer.id, {
+      firstName: "Bruno",
+      isPrimary: true,
+    });
+
+    const list = await request(server)
+      .get(`/customers/${customer.id}/contacts`)
+      .set(auth(owner.token))
+      .expect(200);
+
+    expect(list.body.find((contact) => contact.id === first.id).isPrimary).toBe(
+      false,
+    );
+    expect(
+      list.body.find((contact) => contact.id === second.id).isPrimary,
+    ).toBe(true);
+
+    const updated = await request(server)
+      .patch(`/customers/${customer.id}/contacts/${second.id}`)
+      .set(auth(owner.token))
+      .send({ position: "CTO", isPrimary: false })
+      .expect(200);
+    expect(updated.body.position).toBe("CTO");
+    expect(updated.body.isPrimary).toBe(false);
+
+    await request(server)
+      .delete(`/customers/${customer.id}/contacts/${first.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    await request(server)
+      .get(`/customers/${customer.id}/contacts/${first.id}`)
+      .set(auth(owner.token))
+      .expect(404);
+  });
+
+  it("scopes contacts by customer owner", async () => {
+    const owner = await register();
+    const me = await request(server)
+      .get("/users/me")
+      .set(auth(owner.token))
+      .expect(200);
+
+    await createSalesUser(me.body.organizationId);
+    const salesToken = await login("sales@example.com", "Senha123!");
+    const ownerCustomer = await createCustomer(owner.token, "Cliente Owner");
+
+    await request(server)
+      .get(`/customers/${ownerCustomer.id}/contacts`)
+      .set(auth(salesToken))
+      .expect(404);
+
+    await request(server)
+      .post(`/customers/${ownerCustomer.id}/contacts`)
+      .set(auth(salesToken))
+      .send({ firstName: "Sem", lastName: "Acesso" })
+      .expect(404);
   });
 });
