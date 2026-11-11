@@ -1,21 +1,25 @@
 # Nuvora CRM — web
 
-Propostas de interface para o dashboard operacional do CRM, construídas em React + TypeScript + Vite.
+Aplicativo React + TypeScript + Vite do CRM, usando a direção **Briefing** (Precision UI compacta).
 
 ## Rodar
+
+Com a API Nest rodando em `http://127.0.0.1:3000`:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173`. A barra inferior alterna entre as três propostas e entre tema claro/escuro; a URL guarda a escolha (`?p=a&theme=light`).
+Abra `http://localhost:5173`. O Vite faz proxy de `/api` para a API local (veja `vite.config.ts`). Em outro ambiente, defina `VITE_API_URL` com a URL pública da API.
 
-## Propostas
+Use uma conta existente ou crie uma organização em `/register`.
 
-- **A · Console** — grade densa, tabela, barras e leitura operacional.
-- **B · Briefing** — layout editorial assimétrico, foco em prioridades do dia.
-- **C · Atlas** — pipeline como quadro kanban, com etapas, cards e painel lateral.
+## Rotas
+
+- `/login` e `/register` — autenticação.
+- `/dashboard` — dashboard Briefing conectado à API.
+- `/clientes`, `/negocios`, `/tarefas`, `/contatos`, `/produtos`, `/equipe` — módulos com a API pronta, aguardando a próxima etapa do frontend.
 
 ## Scripts
 
@@ -25,4 +29,6 @@ npm run lint
 npm run preview
 ```
 
-A implementação final do design system só começa depois da escolha de uma proposta.
+## Propostas
+
+As propostas A (Console) e C (Atlas) continuam em `src/proposals/` apenas como referência de direção visual. O app em produção usa a proposta B.

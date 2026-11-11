@@ -4,13 +4,9 @@ API REST demonstrativa de um CRM comercial, criada para portfólio com foco em m
 
 > **Status atual:** a API expõe autenticação, perfil, clientes, contatos, interações, tarefas, negociações, catálogo de produtos, itens de negociação, dashboard operacional e gestão de equipe. Planos/billing, anexos e integrações externas permanecem fora do escopo atual.
 
-## Frontend (propostas)
+## Frontend
 
-O diretório `web/` contém o app **React + TypeScript + Vite** com três propostas de interface para o dashboard operacional:
-
-- **A · Console** — grade densa, tabela, barras e leitura operacional.
-- **B · Briefing** — layout editorial assimétrico, foco nas prioridades do dia.
-- **C · Atlas** — pipeline como quadro kanban, com etapas, cards e painel lateral.
+O diretório `web/` contém o app **React + TypeScript + Vite** na direção **Briefing**: dashboard operacional compacto, editorial e keyboard-first.
 
 ```bash
 cd web
@@ -18,7 +14,9 @@ npm install
 npm run dev
 ```
 
-A barra inferior alterna entre as propostas e o tema claro/escuro. A implementação do design system final começa após a escolha de uma proposta.
+O Vite faz proxy de `/api` para a API local em `http://127.0.0.1:3000`. Use `/login` ou `/register`; o dashboard fica em `/dashboard`. As rotas de clientes, negócios, tarefas, contatos, produtos e equipe já têm a API pronta e serão conectadas nas próximas etapas.
+
+As propostas A (Console) e C (Atlas) permanecem em `src/proposals/` apenas como referência visual.
 
 ## Propósito
 
